@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Secrets: ne jamais versionner les cles d'API
+.env
+
+# Donnees collectees et cache HTTP
+data/
