@@ -49,7 +49,8 @@ une tache planifiee.
 | Source | Couverture | Cle requise | Fiabilite observee |
 |---|---|---|---|
 | **FRED** (Fed de Saint-Louis) | Macro US, taux, indices, matieres premieres, crypto (Coinbase) | oui, gratuite | tres bonne |
-| **London Strategic Edge** | Indices mondiaux, change, crypto, matieres premieres, rendements souverains, macro 194 pays | oui | tres bonne |
+| **London Strategic Edge** | Indices mondiaux, change, crypto, matieres premieres, macro 194 pays | oui | tres bonne |
+| **EODHD** | Rendements souverains quotidiens (240 tenors), indices | oui | tres bonne |
 | **BCE** (portail de donnees) | Change, taux directeurs, inflation zone euro | non | tres bonne |
 | **Eurostat** | Inflation IPCH par pays | non | bonne (jeu de donnees en retard) |
 | **OCDE** | Indices de cours boursiers | non | bonne |
@@ -91,6 +92,27 @@ deja le HICP de juillet publie la veille. Quand un chiffre vient de sortir,
 il apparait la avant d'apparaitre dans les series.
 
 `veille agenda` interroge l'agenda seul, sans collecter les series.
+
+### EODHD
+
+Sa bourse virtuelle `GBOND` expose 240 tenors souverains publies au jour le
+jour. C'est la seule source cablee ici qui serve les dix ans allemand,
+francais, italien, espagnol, britannique, japonais et chinois sans decalage :
+la BCE n'en publie qu'une moyenne mensuelle par pays, FRED s'en tient aux
+Etats-Unis, et les series souveraines de LSE accusent une dizaine de jours de
+retard. Sa bourse `INDX` sert par ailleurs les indices que LSE laisse se
+figer.
+
+Deux verifications ont oriente ce cablage, contre l'intuition de depart :
+
+- **Twelve Data n'a pas les rendements souverains.** Son endpoint `/bonds`
+  ne renvoie que deux symboles, `US2Y` et `ZA10Y`. `DE10Y`, `FR10Y` et les
+  autres sont refuses comme symboles invalides, alors que `US2Y` repond
+  normalement : ce n'est donc pas une limite de plan, ils n'existent pas.
+  Les actions europeennes y sont par ailleurs reservees aux offres Pro.
+- **`USB10Y/USD` chez LSE cote un prix de future**, autour de 108, et non un
+  rendement autour de 4,7. Le symbole est tentant parce qu'il est a jour,
+  mais il ne mesure pas la meme chose.
 
 ### A propos de Yahoo Finance
 
@@ -200,17 +222,17 @@ dans ce cas.
   decembre 2025 et divergent de 0,1 point sur ce mois (2,0 % contre 1,9 %),
   ecart absorbe par la tolerance macro. LSE prend le relais jusqu'a juin
   2026 et fournit la valeur de reference.
-- **Rendements souverains allemands et francais** : environ dix jours de
-  retard chez LSE, signale a chaque run. Pour la zone euro, la courbe AAA de
-  la BCE (`rate.ea_10y_aaa`) est quotidienne et a J-1. Sur les taux
-  americains, FRED reste le plus a jour (J-2) : les instruments LSE
-  `USB10Y/USD` et consorts cotent un **prix de future** (108,5) et non un
-  rendement (4,71), ils ne sont donc pas utilisables comme taux.
+- **Courbe AAA zone euro** : elle reste a J-1, et le restera. C'est un calcul
+  proprietaire de la BCE, qui recalcule la courbe en excluant les emetteurs
+  notes sous AAA. Aucun fournisseur commercial ne la reproduit ; ils
+  republient tous la valeur BCE avec le meme delai.
 - **Projections** : le FMI publie jusqu'en 2031. Ces valeurs sont exclues du
   chiffre de reference et regroupees dans une section a part, pour ne pas
   presenter une prevision comme le dernier chiffre connu.
-- **IBEX 35** : la serie LSE s'arrete a juin 2026 et est signalee comme
-  obsolete a chaque run.
+- **IBEX 35** : servi par EODHD. La serie `ES35/EUR` de LSE a ete retiree —
+  elle cote autour de 1 900 quand l'indice vaut 19 800, soit un facteur dix,
+  et s'arretait a juin 2026. Le controle de reconciliation l'a signalee comme
+  probable probleme d'echelle avant qu'elle ne fausse le rapport.
 - **Resultat net trimestriel** : le quatrieme trimestre n'apparait pas
   toujours comme periode de 90 jours dans XBRL, les societes ne publiant
   alors que le cumul annuel dans leur 10-K. La serie peut donc sauter un

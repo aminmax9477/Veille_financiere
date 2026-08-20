@@ -117,6 +117,13 @@ def check_freshness(series_id: str, obs: Sequence[Observation], frequency: str,
                  f"(seuil {limit} j pour frequence {frequency})")
 
 
+# Ecart minimal, par frequence, en deca duquel on ne parle pas de trou. Les
+# places ferment plusieurs jours d'affilee pour les fetes nationales — la
+# semaine d'or chinoise en octobre, le nouvel an lunaire — et ces coupures
+# sont normales, pas des donnees manquantes.
+CONTINUITY_FLOOR_DAYS = {"daily": 12, "monthly": 70, "quarterly": 200}
+
+
 def check_continuity(series_id: str, obs: Sequence[Observation],
                      frequency: str) -> Check:
     # Dedoublonnage indispensable: quand plusieurs sources couvrent la meme
@@ -128,7 +135,8 @@ def check_continuity(series_id: str, obs: Sequence[Observation],
     gaps = [(b - a).days for a, b in zip(dates, dates[1:])]
     median_gap = statistics.median(gaps)
     # Un trou est un intervalle nettement superieur au pas median observe.
-    threshold = max(median_gap * 4, median_gap + 5)
+    threshold = max(median_gap * 4, median_gap + 5,
+                    CONTINUITY_FLOOR_DAYS.get((frequency or "").lower(), 0))
     holes = [(a, b) for a, b in zip(dates, dates[1:]) if (b - a).days > threshold]
     if not holes:
         return Check(series_id, "continuity", INFO, True,

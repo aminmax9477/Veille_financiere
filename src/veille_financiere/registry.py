@@ -57,6 +57,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "taux",
         "providers": [
+            {"source": "eodhd", "native_id": "US10Y", "limit": 90},
             {"source": "lse", "native_id": "US10YT=RR", "mode": "series", "limit": 90},
             {"source": "fred", "native_id": "DGS10", "limit": 90},
             # ^TNX est cote en pourcentage chez Yahoo (ex. 4.71).
@@ -69,6 +70,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "taux",
         "providers": [
+            {"source": "eodhd", "native_id": "US2Y", "limit": 90},
             {"source": "lse", "native_id": "US2YT=RR", "mode": "series", "limit": 90},{"source": "fred", "native_id": "DGS2", "limit": 90}],
     },
     "rate.fed_funds": {
@@ -87,6 +89,43 @@ CATALOGUE: dict[str, dict[str, Any]] = {
             {"source": "ecb", "native_id": "FM/D.U2.EUR.4F.KR.DFR.LEV",
              "limit": 40},
         ],
+    },
+
+
+    "rate.it10y": {
+        "label": "Taux 10 ans Italie (BTP)",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "eodhd", "native_id": "IT10Y", "limit": 90}],
+    },
+    "rate.es10y": {
+        "label": "Taux 10 ans Espagne",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "eodhd", "native_id": "ES10Y", "limit": 90}],
+    },
+    "rate.gb10y": {
+        "label": "Taux 10 ans Royaume-Uni (Gilt)",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "eodhd", "native_id": "UK10Y", "limit": 90}],
+    },
+    "rate.jp10y": {
+        "label": "Taux 10 ans Japon (JGB)",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "eodhd", "native_id": "JP10Y", "limit": 90}],
+    },
+    "rate.cn10y": {
+        "label": "Taux 10 ans Chine",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "eodhd", "native_id": "CN10Y", "limit": 90}],
     },
 
     # ---------------- Inflation / macro ----------------
@@ -266,6 +305,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "taux",
         "providers": [
+            {"source": "eodhd", "native_id": "US30Y", "limit": 90},
             {"source": "lse", "native_id": "US30YT=RR", "mode": "series", "limit": 90},{"source": "fred", "native_id": "DGS30", "limit": 90}],
     },
     "rate.us_curve_10y2y": {
@@ -328,7 +368,12 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "unit": "points",
         "frequency": "daily",
         "category": "actions",
-        "providers": [{"source": "lse", "native_id": "ES35/EUR", "limit": 90}],
+        "providers": [
+            # LSE cote ES35/EUR autour de 1 900 quand l'indice vaut 19 800,
+            # et sa serie s'arrete a juin 2026 : ce n'est pas le meme
+            # instrument, l'y adosser fabriquait une divergence permanente.
+            {"source": "eodhd", "native_id": "IBEX", "market": "INDX",
+             "limit": 90}],
     },
     "commodity.silver": {
         "label": "Argent",
@@ -356,7 +401,8 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "unit": "%",
         "frequency": "daily",
         "category": "taux",
-        "providers": [{"source": "lse", "native_id": "DE10YT=RR", "mode": "series",
+        "providers": [
+            {"source": "eodhd", "native_id": "DE10Y", "limit": 90},{"source": "lse", "native_id": "DE10YT=RR", "mode": "series",
                        "limit": 90}],
     },
     "rate.fr10y": {
@@ -364,7 +410,8 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "unit": "%",
         "frequency": "daily",
         "category": "taux",
-        "providers": [{"source": "lse", "native_id": "FR10YT=RR", "mode": "series",
+        "providers": [
+            {"source": "eodhd", "native_id": "FR10Y", "limit": 90},{"source": "lse", "native_id": "FR10YT=RR", "mode": "series",
                        "limit": 90}],
     },
 

@@ -405,3 +405,59 @@ def test_surprise_absente_quand_incomparable(actual, consensus):
 def test_conversion_des_valeurs_textuelles(raw, expected):
     from veille_financiere.models import _to_number
     assert _to_number(raw) == pytest.approx(expected)
+
+
+# ----------------------------------------------------------------- EODHD
+def test_eodhd_exige_une_cle():
+    from veille_financiere.sources.eodhd import EodhdSource
+    with pytest.raises(SourceError):
+        EodhdSource(FakeFetcher([]), api_key="")
+
+
+def test_eodhd_lit_les_rendements_souverains():
+    from veille_financiere.sources.eodhd import EodhdSource
+    payload = [{"date": "2026-08-20", "close": 3.2753},
+               {"date": "2026-08-19", "close": 3.2410}]
+    fetcher = FakeFetcher(payload)
+    src = EodhdSource(fetcher, api_key="k")
+    obs = src._fetch_series({"series_id": "rate.de10y", "native_id": "DE10Y"})
+    assert len(obs) == 2
+    assert obs[0].value == pytest.approx(3.2753)
+    # La bourse virtuelle par defaut est GBOND.
+    assert fetcher.calls[0][0].endswith("/eod/DE10Y.GBOND")
+
+
+def test_eodhd_bascule_sur_la_bourse_des_indices():
+    from veille_financiere.sources.eodhd import EodhdSource
+    fetcher = FakeFetcher([{"date": "2026-08-20", "close": 19811.0}])
+    src = EodhdSource(fetcher, api_key="k")
+    obs = src._fetch_series({"series_id": "equity.ibex35", "native_id": "IBEX",
+                             "market": "INDX"})
+    assert obs[0].value == pytest.approx(19811.0)
+    assert fetcher.calls[0][0].endswith("/eod/IBEX.INDX")
+
+
+def test_eodhd_remonte_une_erreur_renvoyee_en_objet():
+    """Les erreurs arrivent sous forme de dict la ou le succes est une liste."""
+    from veille_financiere.sources.eodhd import EodhdSource
+    src = EodhdSource(FakeFetcher({"message": "Ticker Not Found"}), api_key="k")
+    with pytest.raises(SourceError, match="Ticker Not Found"):
+        src._fetch_series({"series_id": "x", "native_id": "ENI"})
+
+
+def test_eodhd_ignore_les_lignes_sans_valeur():
+    from veille_financiere.sources.eodhd import EodhdSource
+    payload = [{"date": "2026-08-20", "close": None},
+               {"date": None, "close": 1.0},
+               {"date": "2026-08-19", "close": 4.12}]
+    src = EodhdSource(FakeFetcher(payload), api_key="k")
+    obs = src._fetch_series({"series_id": "rate.fr10y", "native_id": "FR10Y"})
+    assert len(obs) == 1 and obs[0].value == pytest.approx(4.12)
+
+
+def test_eodhd_se_rabat_sur_adjusted_close():
+    from veille_financiere.sources.eodhd import EodhdSource
+    src = EodhdSource(FakeFetcher([{"date": "2026-08-20",
+                                    "adjusted_close": 5.07}]), api_key="k")
+    obs = src._fetch_series({"series_id": "rate.gb10y", "native_id": "UK10Y"})
+    assert obs[0].value == pytest.approx(5.07)

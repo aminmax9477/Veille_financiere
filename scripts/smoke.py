@@ -13,6 +13,7 @@ reg = {
     "ecb": S.EcbSource(f), "eurostat": S.EurostatSource(f),
     "worldbank": S.WorldBankSource(f), "imf": S.ImfSource(f),
     "oecd": S.OecdSource(f),
+    "eodhd": S.EodhdSource(f, os.environ.get("EODHD_API_KEY","")),
     "lse": S.LseSource(f, os.environ.get("LSE_API_KEY","")),
     "coingecko": S.CoinGeckoSource(f), "frankfurter": S.FrankfurterSource(f),
     "yahoo": S.YahooSource(f),

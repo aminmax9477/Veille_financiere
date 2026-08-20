@@ -37,6 +37,11 @@ class Settings:
     lse_api_key: str = field(
         default_factory=lambda: os.environ.get("LSE_API_KEY", "")
     )
+    # EODHD: rendements souverains quotidiens et indices boursiers.
+    eodhd_api_key: str = field(
+        default_factory=lambda: os.environ.get("EODHD_API_KEY", "")
+    )
+
     # Contact envoye a la SEC, qui exige un User-Agent identifiable.
     sec_contact: str = field(
         default_factory=lambda: os.environ.get("VF_SEC_CONTACT", "")
@@ -76,6 +81,7 @@ class Settings:
         return {
             "fred": bool(self.fred_api_key),
             "lse": bool(self.lse_api_key),
+            "eodhd": bool(self.eodhd_api_key),
             "ecb": True,
             "eurostat": True,
             "worldbank": True,

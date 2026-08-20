@@ -203,3 +203,19 @@ def test_projection_absente_si_serie_entierement_passee():
 def test_reference_none_si_tout_est_dans_le_futur():
     by = {"imf": [obs("imf", dt.date(2031, 12, 31), 1.1)]}
     assert consensus(by, ["imf"], today=TODAY) is None
+
+
+def test_continuite_tolere_une_fermeture_de_fete_nationale():
+    """La semaine d'or chinoise ferme la place une dizaine de jours : c'est
+    une coupure normale, pas une donnee manquante."""
+    dates = [dt.date(2025, 9, d) for d in (26, 29, 30)]
+    dates += [dt.date(2025, 10, d) for d in (9, 10, 13, 14, 15, 16, 17, 20)]
+    c = check_continuity("rate.cn10y", [obs("eodhd", d, 1.7) for d in dates],
+                         "daily")
+    assert c.passed, c.detail
+
+
+def test_continuite_signale_encore_un_vrai_trou_quotidien():
+    dates = [dt.date(2026, 1, d) for d in (5, 6, 7)] + [dt.date(2026, 3, 2)]
+    c = check_continuity("x", [obs("eodhd", d, 1.0) for d in dates], "daily")
+    assert not c.passed
