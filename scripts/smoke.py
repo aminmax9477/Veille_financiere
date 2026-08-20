@@ -1,5 +1,5 @@
 """Teste chaque adaptateur contre les APIs reelles et affiche le resultat."""
-import sys, logging
+import sys, os, logging
 sys.path.insert(0, "src")
 logging.basicConfig(level=logging.ERROR)
 from veille_financiere.config import settings
@@ -13,6 +13,7 @@ reg = {
     "ecb": S.EcbSource(f), "eurostat": S.EurostatSource(f),
     "worldbank": S.WorldBankSource(f), "imf": S.ImfSource(f),
     "oecd": S.OecdSource(f),
+    "lse": S.LseSource(f, os.environ.get("LSE_API_KEY","")),
     "coingecko": S.CoinGeckoSource(f), "frankfurter": S.FrankfurterSource(f),
     "yahoo": S.YahooSource(f),
     "sec_edgar": S.SecEdgarSource(f, settings.sec_contact),

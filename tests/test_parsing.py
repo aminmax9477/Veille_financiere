@@ -232,3 +232,117 @@ def test_coingecko_signale_un_historique_absent():
     src = CoinGeckoSource(FakeFetcher({"status": {"error_code": 429}}))
     with pytest.raises(SourceError):
         src._fetch_series({"series_id": "crypto.btcusd", "native_id": "bitcoin"})
+
+
+# ------------------------------------------------------------------ LSE
+def test_lse_exige_une_cle():
+    from veille_financiere.sources.lse import LseSource
+    with pytest.raises(SourceError):
+        LseSource(FakeFetcher([]), api_key="")
+
+
+def test_lse_candles_retient_la_cloture():
+    from veille_financiere.sources.lse import LseSource
+    payload = [
+        {"ts": "2026-08-20 00:00:00.000000", "symbol": "FR40/EUR",
+         "open": 8498.2, "high": 8516.8, "low": 8446.9, "close": 8461.4},
+        {"ts": "2026-08-19 00:00:00.000000", "symbol": "FR40/EUR",
+         "open": 8503.2, "high": 8564.3, "low": 8491.2, "close": 8503.7},
+    ]
+    src = LseSource(FakeFetcher(payload), api_key="k")
+    obs = src._fetch_series({"series_id": "equity.cac40",
+                             "native_id": "FR40/EUR"})
+    by_date = {o.date: o.value for o in obs}
+    assert by_date[dt.date(2026, 8, 20)] == pytest.approx(8461.4)
+    assert by_date[dt.date(2026, 8, 19)] == pytest.approx(8503.7)
+
+
+def test_lse_candles_accepte_le_champ_timestamp():
+    """Le SDK officiel renomme 'ts' en 'timestamp': les deux doivent passer."""
+    from veille_financiere.sources.lse import LseSource
+    payload = [{"timestamp": "2026-08-20T00:00:00", "close": 4508.02}]
+    src = LseSource(FakeFetcher(payload), api_key="k")
+    obs = src._fetch_series({"series_id": "commodity.gold",
+                             "native_id": "XAU/USD"})
+    assert obs[0].date == dt.date(2026, 8, 20)
+    assert obs[0].value == pytest.approx(4508.02)
+
+
+def test_lse_series_lit_date_et_valeur():
+    from veille_financiere.sources.lse import LseSource
+    payload = [{"symbol": "US10YT=RR", "date": "2026-08-10", "value": 4.70365},
+               {"symbol": "US10YT=RR", "date": "2026-08-07", "value": 4.68}]
+    src = LseSource(FakeFetcher(payload), api_key="k")
+    obs = src._fetch_series({"series_id": "rate.us10y",
+                             "native_id": "US10YT=RR", "mode": "series"})
+    assert len(obs) == 2
+    assert obs[0].value == pytest.approx(4.70365)
+
+
+def test_lse_bond_yields_utilise_la_cloture():
+    from veille_financiere.sources.lse import LseSource
+    payload = [{"symbol": "US2Y", "date": "2026-07-24", "open": 4.74,
+                "high": 4.774, "low": 4.717, "close": 4.745}]
+    src = LseSource(FakeFetcher(payload), api_key="k")
+    obs = src._fetch_series({"series_id": "rate.us02y", "native_id": "US2Y",
+                             "mode": "bond_yields"})
+    assert obs[0].value == pytest.approx(4.745)
+
+
+def test_lse_remonte_l_erreur_de_l_api():
+    """L'API encapsule ses erreurs dans un dict 'detail' avec un HTTP 200."""
+    from veille_financiere.sources.lse import LseSource
+    src = LseSource(FakeFetcher({"detail": "bad symbol"}), api_key="k")
+    with pytest.raises(SourceError, match="bad symbol"):
+        src._fetch_series({"series_id": "x", "native_id": "^FCHI"})
+
+
+def test_lse_rejette_un_mode_inconnu():
+    from veille_financiere.sources.lse import LseSource
+    src = LseSource(FakeFetcher([]), api_key="k")
+    with pytest.raises(SourceError, match="mode LSE inconnu"):
+        src._fetch_series({"series_id": "x", "native_id": "y", "mode": "zzz"})
+
+
+# ------------------------------------------------- normalisation des dates
+def test_normalisation_aligne_les_series_mensuelles():
+    """FRED et LSE datent le mois a son premier jour, la BCE et Eurostat a
+    son libelle: sans recalage, aucune date commune donc aucun recoupement."""
+    from veille_financiere.sources.base import normalize_date
+    assert normalize_date(dt.date(2026, 6, 1), "monthly") == dt.date(2026, 6, 30)
+    assert normalize_date(dt.date(2026, 6, 30), "monthly") == dt.date(2026, 6, 30)
+    assert normalize_date(dt.date(2026, 2, 1), "monthly") == dt.date(2026, 2, 28)
+
+
+def test_normalisation_laisse_les_trimestres_intacts():
+    """Le premier trimestre de NVIDIA se termine en avril: le recaler sur une
+    fin de trimestre civil afficherait une date fausse."""
+    from veille_financiere.sources.base import normalize_date
+    assert normalize_date(dt.date(2026, 4, 26), "quarterly") == dt.date(2026, 4, 26)
+
+
+def test_normalisation_ne_touche_pas_au_quotidien():
+    from veille_financiere.sources.base import normalize_date
+    assert normalize_date(dt.date(2026, 8, 20), "daily") == dt.date(2026, 8, 20)
+
+
+def test_deux_sources_mensuelles_deviennent_comparables():
+    """Regression de bout en bout: LSE (1er du mois) et Eurostat (libelle du
+    mois) doivent produire la meme date apres normalisation."""
+    from veille_financiere.sources.lse import LseSource
+    from veille_financiere.sources.eurostat import EurostatSource
+
+    lse = LseSource(FakeFetcher([{"date": "2026-06-01", "value": 2.8}]),
+                    api_key="k")
+    o_lse = lse._fetch_series({"series_id": "macro.ea_hicp_yoy",
+                               "native_id": "eccpemuy", "mode": "series",
+                               "frequency": "monthly"})
+
+    euro = EurostatSource(FakeFetcher({
+        "value": {"0": 2.7}, "id": ["geo", "time"], "size": [1, 1],
+        "dimension": {"time": {"category": {"index": {"2026-06": 0}}}},
+    }))
+    o_euro = euro._fetch_series({"series_id": "macro.ea_hicp_yoy",
+                                 "native_id": "prc_hicp_manr",
+                                 "frequency": "monthly"})
+    assert o_lse[0].date == o_euro[0].date == dt.date(2026, 6, 30)

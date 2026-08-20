@@ -39,13 +39,17 @@ MAX_AGE_DAYS = {
 # Les series de marche doivent coller de tres pres; les agregats macro
 # tolerent des ecarts de definition et de revision.
 CATEGORY_TOLERANCE = {
-    # Les parites sont fixees a des heures differentes selon le publicateur
-    # (fixing BCE a 14h15 CET, taux "noon buying" de New York pour FRED):
-    # un ecart de quelques dixiemes de pourcent est normal, pas une anomalie.
-    "change": 0.004,
+    # Les parites sont relevees a des heures differentes selon le
+    # publicateur: fixing BCE a 14h15 CET, taux "noon buying" de New York
+    # pour FRED, cloture de la bougie quotidienne pour les fournisseurs de
+    # marche. L'amplitude intrajournaliere courante de l'EUR/USD suffit a
+    # expliquer un ecart inferieur au point de pourcentage.
+    "change": 0.008,
     "taux": 0.02,
     "actions": 0.005,
-    "matieres": 0.02,
+    # Les fournisseurs de marche cotent le contrat de premiere echeance,
+    # la ou FRED publie un prix au comptant FOB: l'ecart est structurel.
+    "matieres": 0.05,
     "crypto": 0.01,
     "macro": 0.10,
     "fondamentaux": 0.01,
@@ -55,6 +59,13 @@ CATEGORY_TOLERANCE = {
 # depasse le seuil. Sans ce plancher, deux series proches de zero (croissance
 # du PIB a 0,7 % contre 0,86 %) affichent un ecart relatif de 19 % qui ne
 # traduit aucune anomalie exploitable.
+# Tolerance propre a une serie, quand sa categorie ne convient pas. Le VIX
+# vit dans la categorie "actions" mais, cote a une quinzaine de points, il
+# bouge trop vite pour le seuil resserre des indices.
+SERIES_TOLERANCE = {
+    "equity.vix": 0.02,
+}
+
 CATEGORY_ABS_FLOOR = {
     "change": 0.0,      # les parites sont d'ordre 1, le relatif suffit
     "taux": 0.03,       # 3 points de base
@@ -75,7 +86,9 @@ class Check:
     detail: str = ""
 
 
-def _tolerance(category: str, default: float) -> float:
+def _tolerance(category: str, default: float, series_id: str = "") -> float:
+    if series_id in SERIES_TOLERANCE:
+        return SERIES_TOLERANCE[series_id]
     return CATEGORY_TOLERANCE.get(category, default)
 
 
@@ -161,7 +174,7 @@ def reconcile(series_id: str, by_source: dict[str, list[Observation]],
         return [Check(series_id, "reconcile", INFO, True,
                       "une seule source, pas de recoupement possible")]
 
-    tol = _tolerance(category, default_tolerance)
+    tol = _tolerance(category, default_tolerance, series_id)
     floor = _abs_floor(category)
     indexed = {
         src: {o.date: o.value for o in obs} for src, obs in by_source.items() if obs

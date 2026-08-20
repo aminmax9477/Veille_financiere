@@ -6,6 +6,7 @@ from .eurostat import EurostatSource
 from .frankfurter import FrankfurterSource
 from .fred import FredSource
 from .imf import ImfSource
+from .lse import LseSource
 from .oecd import OecdSource
 from .sec_edgar import SecEdgarSource
 from .worldbank import WorldBankSource
@@ -13,7 +14,8 @@ from .yahoo import YahooSource
 
 __all__ = [
     "Source", "CoinGeckoSource", "EcbSource", "EurostatSource",
-    "FrankfurterSource", "FredSource", "ImfSource", "OecdSource",
+    "FrankfurterSource", "FredSource", "ImfSource", "LseSource",
+    "OecdSource",
     "SecEdgarSource",
     "WorldBankSource", "YahooSource",
 ]

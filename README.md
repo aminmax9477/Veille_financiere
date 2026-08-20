@@ -16,9 +16,12 @@ pip install -e .            # ou simplement : pip install requests
 cp .env.example .env        # puis renseigner FRED_API_KEY
 ```
 
-Seule la cle FRED est necessaire, et elle est gratuite
-([demande de cle](https://fredaccount.stlouisfed.org/apikeys)). Toutes les
-autres sources sont ouvertes. Renseigner `VF_SEC_CONTACT` est recommande :
+Deux cles sont utilisees : **FRED**
+([gratuite](https://fredaccount.stlouisfed.org/apikeys)) et **London
+Strategic Edge** ([londonstrategicedge.com/data](https://londonstrategicedge.com/data)).
+Chacune est facultative — la collecte se rabat sur les autres sources et
+signale ce qui manque — mais LSE est la seule a couvrir le CAC 40, l'Euro
+Stoxx 50 en quotidien et l'or. Toutes les autres sources sont ouvertes. Renseigner `VF_SEC_CONTACT` est recommande :
 la SEC exige un contact identifiable dans le `User-Agent`.
 
 ## Utilisation
@@ -45,6 +48,7 @@ une tache planifiee.
 | Source | Couverture | Cle requise | Fiabilite observee |
 |---|---|---|---|
 | **FRED** (Fed de Saint-Louis) | Macro US, taux, indices, matieres premieres, crypto (Coinbase) | oui, gratuite | tres bonne |
+| **London Strategic Edge** | Indices mondiaux, change, crypto, matieres premieres, rendements souverains, macro 194 pays | oui | tres bonne |
 | **BCE** (portail de donnees) | Change, taux directeurs, inflation zone euro | non | tres bonne |
 | **Eurostat** | Inflation IPCH par pays | non | bonne (jeu de donnees en retard) |
 | **OCDE** | Indices de cours boursiers | non | bonne |
@@ -54,6 +58,22 @@ une tache planifiee.
 | **CoinGecko** | Prix crypto | non | bonne (debit limite) |
 | **Frankfurter** | Change (references BCE) | non | tres bonne |
 | **Yahoo Finance** | Actions, indices, matieres premieres | non | **instable** (voir plus bas) |
+
+### London Strategic Edge
+
+C'est la source qui comble les angles morts des donnees publiques :
+
+- **CAC 40, Euro Stoxx 50 en quotidien, or** — aucune alternative gratuite
+  fiable n'existait ; ces series etaient auparavant absentes du rapport.
+- **Inflation zone euro et France** — publiee jusqu'a juin 2026 la ou
+  Eurostat et la BCE s'arretent a decembre 2025, soit six mois d'avance.
+- **Rendements souverains allemands et francais**, absents de FRED.
+- **Recoupement** de la plupart des series de marche deja couvertes, ce qui
+  fait passer le nombre de series reconciliables de 16 a 21.
+
+Trois familles d'endpoints sont exploitees, selectionnees par la cle `mode`
+d'une entree du catalogue : `candles` (chandeliers OHLCV), `series`
+(couples date/valeur pour la macro et les rendements) et `bond_yields`.
 
 ### A propos de Yahoo Finance
 
@@ -69,8 +89,9 @@ est deja connue (le run complet passe de plus de quinze minutes a environ une
 minute). Une reponse 4xx definitive n'ouvre pas le disjoncteur : elle signale
 une requete mal formee, pas un hote en panne.
 
-Seul l'or (`commodity.gold`) n'a aujourd'hui pas d'alternative publique
-gratuite : la serie LBMA de FRED est arretee depuis 2023.
+Depuis le cablage de London Strategic Edge, plus aucune serie ne depend de
+Yahoo seul : les trois qui manquaient au rapport (CAC 40, Euro Stoxx 50, or)
+sont desormais servies par LSE.
 
 ## Controles qualite
 
@@ -95,9 +116,20 @@ Trois regles evitent la plupart des faux positifs :
    (0,4 %, ce qui laisse la place aux heures de fixing differentes : 14h15
    CET pour la BCE, midi a New York pour FRED), les agregats macro beaucoup
    moins (10 %, revisions et differences de methodologie).
-3. **Plancher absolu.** Une croissance de 0,70 % contre 0,86 % represente
+3. **Dates de periode normalisees.** FRED et LSE datent une observation
+   mensuelle au premier jour du mois, la BCE et Eurostat au libelle du mois.
+   Sans recalage en fin de periode, deux sources decrivant le meme mois
+   n'ont aucune date commune et le recoupement conclut a tort qu'elles ne
+   sont pas comparables. Les series trimestrielles sont laissees telles
+   quelles : les exercices des entreprises ne suivent pas le calendrier
+   civil.
+4. **Plancher absolu.** Une croissance de 0,70 % contre 0,86 % represente
    19 % d'ecart relatif mais seulement 0,16 point : sans plancher absolu,
    toute serie proche de zero declencherait une alerte.
+
+Une serie peut surcharger le seuil de sa categorie quand celui-ci ne lui
+convient pas : le VIX vit parmi les indices actions mais, cote a une
+quinzaine de points, il bouge trop vite pour leur seuil resserre.
 
 Une divergence dont le rapport est proche d'un facteur 10, 100 ou 1000 est
 signalee comme probable probleme d'unite plutot que comme desaccord de fond.
@@ -123,19 +155,19 @@ limitees en debit.
 
 ## Limites connues
 
-- **Inflation zone euro et France** : les series IPCH s'arretent a
-  decembre 2025. Ce n'est pas un defaut de collecte — Eurostat et la BCE,
-  interroges independamment, renvoient la meme derniere periode. Le controle
-  de fraicheur signale l'ecart plutot que de le masquer. A noter : les deux
-  sources divergent de 0,1 point sur decembre 2025 (2,0 % contre 1,9 %),
-  ecart absorbe par la tolerance macro.
+- **Inflation zone euro et France** : Eurostat et la BCE s'arretent a
+  decembre 2025 et divergent de 0,1 point sur ce mois (2,0 % contre 1,9 %),
+  ecart absorbe par la tolerance macro. LSE prend le relais jusqu'a juin
+  2026 et fournit la valeur de reference.
+- **Rendements souverains LSE** : environ dix jours de retard, ce que le
+  controle de fraicheur signale a chaque run. FRED reste plus a jour sur les
+  taux americains et sert donc de reference.
+- **IBEX 35** : la serie LSE s'arrete a juin 2026 et est signalee comme
+  obsolete a chaque run.
 - **Resultat net trimestriel** : le quatrieme trimestre n'apparait pas
   toujours comme periode de 90 jours dans XBRL, les societes ne publiant
   alors que le cumul annuel dans leur 10-K. La serie peut donc sauter un
   trimestre. Le deduire (annuel moins cumul 9 mois) reste a faire.
-- **Or** : aucune source publique gratuite fiable n'a ete trouvee en
-  remplacement de Yahoo. La serie LBMA de FRED est arretee depuis 2023.
-
 ## Un point de vigilance sur les fondamentaux SEC
 
 Dans XBRL, une meme balise de flux (`NetIncomeLoss`) apparait aussi bien dans

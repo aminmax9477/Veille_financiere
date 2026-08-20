@@ -19,6 +19,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "change",
         "providers": [
+            {"source": "lse", "native_id": "EUR/USD", "limit": 90},
             {"source": "ecb", "native_id": "EXR/D.USD.EUR.SP00.A", "limit": 60},
             {"source": "frankfurter", "native_id": "EUR/USD"},
             {"source": "fred", "native_id": "DEXUSEU", "limit": 60},
@@ -31,6 +32,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "change",
         "providers": [
+            {"source": "lse", "native_id": "GBP/USD", "limit": 90},
             {"source": "frankfurter", "native_id": "GBP/USD"},
             {"source": "fred", "native_id": "DEXUSUK", "limit": 60},
             {"source": "yahoo", "native_id": "GBPUSD=X", "range": "1mo"},
@@ -42,6 +44,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "change",
         "providers": [
+            {"source": "lse", "native_id": "USD/JPY", "limit": 90},
             {"source": "fred", "native_id": "DEXJPUS", "limit": 60},
             {"source": "yahoo", "native_id": "USDJPY=X", "range": "1mo"},
         ],
@@ -54,6 +57,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "taux",
         "providers": [
+            {"source": "lse", "native_id": "US10YT=RR", "mode": "series", "limit": 90},
             {"source": "fred", "native_id": "DGS10", "limit": 90},
             # ^TNX est cote en pourcentage chez Yahoo (ex. 4.71).
             {"source": "yahoo", "native_id": "^TNX", "range": "1mo"},
@@ -64,7 +68,8 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "unit": "%",
         "frequency": "daily",
         "category": "taux",
-        "providers": [{"source": "fred", "native_id": "DGS2", "limit": 90}],
+        "providers": [
+            {"source": "lse", "native_id": "US2YT=RR", "mode": "series", "limit": 90},{"source": "fred", "native_id": "DGS2", "limit": 90}],
     },
     "rate.fed_funds": {
         "label": "Taux effectif des Fed Funds",
@@ -101,6 +106,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "monthly",
         "category": "macro",
         "providers": [
+            {"source": "lse", "native_id": "eccpemuy", "mode": "series", "limit": 36},
             {"source": "eurostat", "native_id": "prc_hicp_manr", "limit": 24,
              "params": {"geo": "EA", "coicop": "CP00", "unit": "RCH_A"}},
             {"source": "ecb", "native_id": "ICP/M.U2.N.000000.4.ANR", "limit": 24},
@@ -112,6 +118,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "monthly",
         "category": "macro",
         "providers": [
+            {"source": "lse", "native_id": "frcpiyoy", "mode": "series", "limit": 36},
             {"source": "eurostat", "native_id": "prc_hicp_manr", "limit": 24,
              "params": {"geo": "FR", "coicop": "CP00", "unit": "RCH_A"}},
             {"source": "ecb", "native_id": "ICP/M.FR.N.000000.4.ANR", "limit": 24},
@@ -144,6 +151,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "actions",
         "providers": [
+            {"source": "lse", "native_id": "SPX500/USD", "limit": 90},
             {"source": "yahoo", "native_id": "^GSPC", "range": "3mo"},
             {"source": "fred", "native_id": "SP500", "limit": 90},
         ],
@@ -153,14 +161,16 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "unit": "points",
         "frequency": "daily",
         "category": "actions",
-        "providers": [{"source": "yahoo", "native_id": "^FCHI", "range": "3mo"}],
+        "providers": [
+            {"source": "lse", "native_id": "FR40/EUR", "limit": 90},{"source": "yahoo", "native_id": "^FCHI", "range": "3mo"}],
     },
     "equity.eurostoxx50": {
         "label": "Euro Stoxx 50",
         "unit": "points",
         "frequency": "daily",
         "category": "actions",
-        "providers": [{"source": "yahoo", "native_id": "^STOXX50E", "range": "3mo"}],
+        "providers": [
+            {"source": "lse", "native_id": "EU50/EUR", "limit": 90},{"source": "yahoo", "native_id": "^STOXX50E", "range": "3mo"}],
     },
     "equity.vix": {
         "label": "VIX (volatilite implicite S&P 500)",
@@ -168,6 +178,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "actions",
         "providers": [
+            {"source": "lse", "native_id": "VIX/USD", "limit": 90},
             {"source": "yahoo", "native_id": "^VIX", "range": "3mo"},
             {"source": "fred", "native_id": "VIXCLS", "limit": 90},
         ],
@@ -180,6 +191,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "matieres",
         "providers": [
+            {"source": "lse", "native_id": "BCO/USD", "limit": 90},
             {"source": "fred", "native_id": "DCOILBRENTEU", "limit": 90},
             {"source": "yahoo", "native_id": "BZ=F", "range": "3mo"},
         ],
@@ -189,7 +201,8 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "unit": "USD/once",
         "frequency": "daily",
         "category": "matieres",
-        "providers": [{"source": "yahoo", "native_id": "GC=F", "range": "3mo"}],
+        "providers": [
+            {"source": "lse", "native_id": "XAU/USD", "limit": 90},{"source": "yahoo", "native_id": "GC=F", "range": "3mo"}],
     },
 
 
@@ -199,6 +212,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "actions",
         "providers": [
+            {"source": "lse", "native_id": "NASCOMP/USD", "limit": 90},
             {"source": "fred", "native_id": "NASDAQCOM", "limit": 90},
             {"source": "yahoo", "native_id": "^IXIC", "range": "3mo"},
         ],
@@ -209,6 +223,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "actions",
         "providers": [
+            {"source": "lse", "native_id": "US30/USD", "limit": 90},
             {"source": "fred", "native_id": "DJIA", "limit": 90},
             {"source": "yahoo", "native_id": "^DJI", "range": "3mo"},
         ],
@@ -240,6 +255,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "matieres",
         "providers": [
+            {"source": "lse", "native_id": "WTICO/USD", "limit": 90},
             {"source": "fred", "native_id": "DCOILWTICO", "limit": 90},
             {"source": "yahoo", "native_id": "CL=F", "range": "3mo"},
         ],
@@ -249,7 +265,8 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "unit": "%",
         "frequency": "daily",
         "category": "taux",
-        "providers": [{"source": "fred", "native_id": "DGS30", "limit": 90}],
+        "providers": [
+            {"source": "lse", "native_id": "US30YT=RR", "mode": "series", "limit": 90},{"source": "fred", "native_id": "DGS30", "limit": 90}],
     },
     "rate.us_curve_10y2y": {
         "label": "Pente de la courbe US (10 ans - 2 ans)",
@@ -264,6 +281,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "change",
         "providers": [
+            {"source": "lse", "native_id": "USD/CHF", "limit": 90},
             {"source": "fred", "native_id": "DEXSZUS", "limit": 60},
             {"source": "yahoo", "native_id": "USDCHF=X", "range": "1mo"},
         ],
@@ -283,6 +301,73 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "providers": [{"source": "fred", "native_id": "DTWEXBGS", "limit": 90}],
     },
 
+
+    "equity.dax": {
+        "label": "DAX (Allemagne)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [{"source": "lse", "native_id": "DE30/EUR", "limit": 90}],
+    },
+    "equity.ftse100": {
+        "label": "FTSE 100 (Royaume-Uni)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [{"source": "lse", "native_id": "UK100/GBP", "limit": 90}],
+    },
+    "equity.nikkei225": {
+        "label": "Nikkei 225 (Japon)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [{"source": "lse", "native_id": "JP225/USD", "limit": 90}],
+    },
+    "equity.ibex35": {
+        "label": "IBEX 35 (Espagne)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [{"source": "lse", "native_id": "ES35/EUR", "limit": 90}],
+    },
+    "commodity.silver": {
+        "label": "Argent",
+        "unit": "USD/once",
+        "frequency": "daily",
+        "category": "matieres",
+        "providers": [{"source": "lse", "native_id": "XAG/USD", "limit": 90}],
+    },
+    "commodity.copper": {
+        "label": "Cuivre",
+        "unit": "USD/livre",
+        "frequency": "daily",
+        "category": "matieres",
+        "providers": [{"source": "lse", "native_id": "XCU/USD", "limit": 90}],
+    },
+    "commodity.natgas": {
+        "label": "Gaz naturel",
+        "unit": "USD/MMBtu",
+        "frequency": "daily",
+        "category": "matieres",
+        "providers": [{"source": "lse", "native_id": "NATGAS/USD", "limit": 90}],
+    },
+    "rate.de10y": {
+        "label": "Taux 10 ans Allemagne (Bund)",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "lse", "native_id": "DE10YT=RR", "mode": "series",
+                       "limit": 90}],
+    },
+    "rate.fr10y": {
+        "label": "Taux 10 ans France (OAT)",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "lse", "native_id": "FR10YT=RR", "mode": "series",
+                       "limit": 90}],
+    },
+
     # ---------------- Crypto ----------------
     "crypto.btcusd": {
         "label": "Bitcoin / USD",
@@ -290,6 +375,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "crypto",
         "providers": [
+            {"source": "lse", "native_id": "BTC/USD", "limit": 90},
             {"source": "coingecko", "native_id": "bitcoin"},
             {"source": "fred", "native_id": "CBBTCUSD", "limit": 60},
             {"source": "yahoo", "native_id": "BTC-USD", "range": "1mo"},
@@ -301,6 +387,7 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "frequency": "daily",
         "category": "crypto",
         "providers": [
+            {"source": "lse", "native_id": "ETH/USD", "limit": 90},
             {"source": "coingecko", "native_id": "ethereum"},
             {"source": "fred", "native_id": "CBETHUSD", "limit": 60},
             {"source": "yahoo", "native_id": "ETH-USD", "range": "1mo"},

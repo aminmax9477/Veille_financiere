@@ -55,7 +55,7 @@ class Source:
         return Observation(
             series_id=spec["series_id"],
             source=self.name,
-            date=date,
+            date=normalize_date(date, spec.get("frequency", "")),
             value=float(value) * scale,
             unit=spec.get("unit", ""),
             frequency=spec.get("frequency", ""),
@@ -93,6 +93,28 @@ def parse_period(period: str) -> dt.date:
     except ValueError as exc:
         raise SourceError(f"periode illisible: {period!r}") from exc
     raise SourceError(f"periode illisible: {period!r}")
+
+
+def normalize_date(date: dt.date, frequency: str) -> dt.date:
+    """Ramene une date a la fin de sa periode, selon la frequence de la serie.
+
+    Les fournisseurs ne datent pas les series mensuelles de la meme facon:
+    FRED et LSE renvoient le premier jour du mois, la BCE et Eurostat le
+    libelle du mois (qu'on lit en fin de mois). Sans normalisation, deux
+    sources decrivant le meme mois n'ont aucune date commune et la
+    reconciliation conclut a tort qu'elles ne sont pas comparables.
+
+    Les series trimestrielles sont volontairement laissees telles quelles:
+    les exercices des entreprises ne suivent pas le calendrier civil (le
+    premier trimestre de NVIDIA se termine en avril), et les recaler sur une
+    fin de trimestre civil afficherait une date fausse.
+    """
+    freq = (frequency or "").lower()
+    if freq == "monthly":
+        return _end_of_month(date.year, date.month)
+    if freq == "annual":
+        return dt.date(date.year, 12, 31)
+    return date
 
 
 def _end_of_month(year: int, month: int) -> dt.date:

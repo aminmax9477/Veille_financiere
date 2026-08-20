@@ -93,6 +93,7 @@ def _cmd_doctor(args: argparse.Namespace) -> int:
     print(f"  base de donnees : {settings.db_path}")
     print(f"  cache           : {settings.cache_dir} (TTL {settings.cache_ttl}s)")
     print(f"  cle FRED        : {'presente' if settings.fred_api_key else 'ABSENTE'}")
+    print(f"  cle LSE         : {'presente' if settings.lse_api_key else 'ABSENTE'}")
     print(f"  contact SEC     : {settings.sec_contact or 'non declare'}")
     print("\nTest de joignabilite (1 serie par source):")
 
@@ -101,6 +102,7 @@ def _cmd_doctor(args: argparse.Namespace) -> int:
         "oecd": "equity.fr_share_index_m", "worldbank": "macro.fr_gdp_growth",
         "imf": "macro.fr_gdp_growth", "frankfurter": "fx.eurusd",
         "coingecko": "crypto.btcusd", "yahoo": "equity.sp500",
+        "lse": "equity.cac40",
         "sec_edgar": "fundamental.aapl.assets",
     }
     enabled = settings.enabled_sources()

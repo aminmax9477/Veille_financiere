@@ -170,3 +170,12 @@ def test_summarize_compte_les_severites():
         Check("s", "c", "error", False),
     ]
     assert summarize(checks) == {"total": 3, "passed": 1, "warning": 1, "error": 1}
+
+
+def test_tolerance_propre_a_une_serie_prime_sur_la_categorie():
+    """Le VIX est dans la categorie actions mais bouge trop pour son seuil."""
+    d = TODAY
+    by = {"fred": [obs("fred", d, 15.15)], "lse": [obs("lse", d, 15.29)]}
+    # 0,92 % d'ecart: refuse au seuil actions (0,5 %), accepte a celui du VIX.
+    assert any(not c.passed for c in reconcile("equity.sp500", by, "actions"))
+    assert all(c.passed for c in reconcile("equity.vix", by, "actions"))

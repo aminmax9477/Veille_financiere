@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 # Ordre de confiance: institutions officielles avant agregateurs de marche.
 SOURCE_PRIORITY = [
     "ecb", "fred", "eurostat", "sec_edgar", "oecd", "worldbank", "imf",
-    "frankfurter", "coingecko", "yahoo",
+    "lse", "frankfurter", "coingecko", "yahoo",
 ]
 
 
@@ -111,6 +111,10 @@ def build_sources(fetcher: Fetcher, cfg: Settings) -> dict[str, S.Source]:
         reg["fred"] = S.FredSource(fetcher, cfg.fred_api_key)
     else:
         log.warning("FRED_API_KEY absente: couverture macro US desactivee")
+    if cfg.lse_api_key:
+        reg["lse"] = S.LseSource(fetcher, cfg.lse_api_key)
+    else:
+        log.warning("LSE_API_KEY absente: indices europeens et or desactives")
     return reg
 
 

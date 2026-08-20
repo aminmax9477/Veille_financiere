@@ -32,6 +32,11 @@ class Settings:
     fred_api_key: str = field(
         default_factory=lambda: os.environ.get("FRED_API_KEY", "")
     )
+    # London Strategic Edge: seule source cablee couvrant le CAC 40,
+    # l'Euro Stoxx 50 en quotidien et l'or.
+    lse_api_key: str = field(
+        default_factory=lambda: os.environ.get("LSE_API_KEY", "")
+    )
     # Contact envoye a la SEC, qui exige un User-Agent identifiable.
     sec_contact: str = field(
         default_factory=lambda: os.environ.get("VF_SEC_CONTACT", "")
@@ -54,6 +59,7 @@ class Settings:
         """Quelles sources sont utilisables compte tenu des cles presentes."""
         return {
             "fred": bool(self.fred_api_key),
+            "lse": bool(self.lse_api_key),
             "ecb": True,
             "eurostat": True,
             "worldbank": True,
