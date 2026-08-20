@@ -20,6 +20,7 @@ def _cmd_collect(args: argparse.Namespace) -> int:
         include_fundamentals=not args.no_fundamentals,
         only_sources=set(args.source) if args.source else None,
         only_series=set(args.series) if args.series else None,
+        with_calendar=not args.no_calendar,
         persist=not args.no_store,
     )
     if args.format == "markdown":
@@ -87,6 +88,25 @@ def _cmd_history(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_agenda(args: argparse.Namespace) -> int:
+    settings.calendar_lookahead_days = args.days
+    result = run_pipeline(settings, include_fundamentals=False,
+                          only_series=set(), persist=False)
+    released, upcoming = result.events_released(), result.events_upcoming()
+    if not released and not upcoming:
+        print("aucun evenement sur la fenetre demandee")
+        return 1
+    for title, evts in (("DEJA PARU", released), ("ATTENDU", upcoming)):
+        if not evts:
+            continue
+        print(f"\n-- {title} ({len(evts)}) " + "-" * 40)
+        for e in evts:
+            print(f"  {e.date} {e.time or '--':9} {e.region:3} "
+                  f"{e.event[:42]:44} constate={str(e.actual or '--'):>9} "
+                  f"consensus={str(e.consensus or '--'):>9}")
+    return 0
+
+
 def _cmd_doctor(args: argparse.Namespace) -> int:
     """Verifie la configuration et la joignabilite de chaque source."""
     print("Configuration:")
@@ -146,6 +166,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="ignorer les fondamentaux SEC EDGAR")
     p.add_argument("--no-store", action="store_true",
                    help="ne pas ecrire en base")
+    p.add_argument("--no-calendar", action="store_true",
+                   help="ignorer l'agenda macroeconomique")
     p.add_argument("--strict", action="store_true",
                    help="code de sortie 1 si erreur ou appel en echec")
     p.set_defaults(func=_cmd_collect)
@@ -158,6 +180,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--source")
     p.add_argument("--limit", type=int, default=30)
     p.set_defaults(func=_cmd_history)
+
+    p = sub.add_parser("agenda", help="agenda macro seul")
+    p.add_argument("--days", type=int, default=1,
+                   help="nombre de jours a venir (defaut 1)")
+    p.set_defaults(func=_cmd_agenda)
 
     p = sub.add_parser("doctor", help="diagnostiquer configuration et sources")
     p.set_defaults(func=_cmd_doctor)

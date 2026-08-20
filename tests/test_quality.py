@@ -179,3 +179,27 @@ def test_tolerance_propre_a_une_serie_prime_sur_la_categorie():
     # 0,92 % d'ecart: refuse au seuil actions (0,5 %), accepte a celui du VIX.
     assert any(not c.passed for c in reconcile("equity.sp500", by, "actions"))
     assert all(c.passed for c in reconcile("equity.vix", by, "actions"))
+
+
+def test_reference_ecarte_les_projections_futures():
+    """Le FMI projette jusqu'en 2031: retenir cette valeur reviendrait a
+    presenter une prevision comme le dernier chiffre connu."""
+    from veille_financiere.quality import projection
+    by = {
+        "imf": [obs("imf", dt.date(2031, 12, 31), 1.1),
+                obs("imf", dt.date(2025, 12, 31), 0.90)],
+        "worldbank": [obs("worldbank", dt.date(2025, 12, 31), 0.84)],
+    }
+    ref = consensus(by, ["worldbank", "imf"], today=TODAY)
+    assert ref.date == dt.date(2025, 12, 31)
+    assert projection(by, today=TODAY).date == dt.date(2031, 12, 31)
+
+
+def test_projection_absente_si_serie_entierement_passee():
+    from veille_financiere.quality import projection
+    assert projection({"ecb": daily("ecb", 5)}, today=TODAY) is None
+
+
+def test_reference_none_si_tout_est_dans_le_futur():
+    by = {"imf": [obs("imf", dt.date(2031, 12, 31), 1.1)]}
+    assert consensus(by, ["imf"], today=TODAY) is None

@@ -42,6 +42,22 @@ class Settings:
         default_factory=lambda: os.environ.get("VF_SEC_CONTACT", "")
     )
 
+    # Yahoo Finance limite par adresse IP: inutilisable depuis beaucoup
+    # d'environnements, et entierement couvert par LSE. Desactive par defaut,
+    # remettre VF_ENABLE_YAHOO=1 pour le reactiver.
+    enable_yahoo: bool = os.environ.get("VF_ENABLE_YAHOO", "0") == "1"
+
+    # Agenda macro: regions suivies et fenetre autour du jour courant.
+    calendar_regions: tuple[str, ...] = tuple(
+        os.environ.get("VF_CALENDAR_REGIONS", "US,EU,FR,DE,GB").split(",")
+    )
+    calendar_lookback_days: int = int(
+        os.environ.get("VF_CALENDAR_LOOKBACK", "1")
+    )
+    calendar_lookahead_days: int = int(
+        os.environ.get("VF_CALENDAR_LOOKAHEAD", "1")
+    )
+
     # Seuil de divergence relative au-dela duquel deux sources sont en desaccord.
     reconcile_tolerance: float = float(
         os.environ.get("VF_RECONCILE_TOLERANCE", "0.005")
@@ -68,7 +84,7 @@ class Settings:
             "sec_edgar": True,
             "coingecko": True,
             "frankfurter": True,
-            "yahoo": True,
+            "yahoo": self.enable_yahoo,
         }
 
 

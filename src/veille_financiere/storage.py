@@ -38,6 +38,21 @@ CREATE TABLE IF NOT EXISTS run_log (
     started_at  TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS calendar_events (
+    source     TEXT NOT NULL,
+    date       TEXT NOT NULL,
+    region     TEXT NOT NULL,
+    event      TEXT NOT NULL,
+    time       TEXT,
+    period     TEXT,
+    actual     TEXT,
+    previous   TEXT,
+    consensus  TEXT,
+    forecast   TEXT,
+    PRIMARY KEY (source, date, region, event, period)
+);
+CREATE INDEX IF NOT EXISTS idx_cal_date ON calendar_events(date);
+
 CREATE TABLE IF NOT EXISTS quality_checks (
     run_id     TEXT NOT NULL,
     series_id  TEXT NOT NULL,
@@ -79,6 +94,30 @@ class Store:
                  value=excluded.value,
                  retrieved_at=excluded.retrieved_at,
                  meta=excluded.meta""",
+            rows,
+        )
+        self.conn.commit()
+        return len(rows)
+
+    def upsert_events(self, events) -> int:
+        rows = [
+            (e.source, e.date.isoformat(), e.region, e.event, e.time,
+             e.period, e.actual, e.previous, e.consensus, e.forecast)
+            for e in events
+        ]
+        if not rows:
+            return 0
+        # Un evenement se met a jour quand sa valeur constatee est publiee.
+        self.conn.executemany(
+            """INSERT INTO calendar_events
+               (source, date, region, event, time, period, actual, previous,
+                consensus, forecast)
+               VALUES (?,?,?,?,?,?,?,?,?,?)
+               ON CONFLICT(source, date, region, event, period) DO UPDATE SET
+                 actual=excluded.actual,
+                 previous=excluded.previous,
+                 consensus=excluded.consensus,
+                 forecast=excluded.forecast""",
             rows,
         )
         self.conn.commit()

@@ -346,3 +346,62 @@ def test_deux_sources_mensuelles_deviennent_comparables():
                                  "native_id": "prc_hicp_manr",
                                  "frequency": "monthly"})
     assert o_lse[0].date == o_euro[0].date == dt.date(2026, 6, 30)
+
+
+# ------------------------------------------------- agenda macroeconomique
+def test_calendrier_separe_paru_et_attendu():
+    from veille_financiere.sources.lse import LseSource
+    payload = [
+        {"date": "2026-08-19", "time": "09:00 AM", "region_code": "EU",
+         "event": "HICP YoY", "period_hint": "JUL", "actual": "2.2%",
+         "consensus": "2.2%", "previous": "2.8%"},
+        {"date": "2026-08-20", "time": "12:30 PM", "region_code": "US",
+         "event": "Initial Jobless Claims", "actual": None,
+         "consensus": "210K", "previous": "209K"},
+    ]
+    src = LseSource(FakeFetcher(payload), api_key="k")
+    events = src.fetch_calendar(["EU", "US"], dt.date(2026, 8, 19),
+                                dt.date(2026, 8, 20))
+    assert len(events) == 2
+    paru = [e for e in events if e.released]
+    attendu = [e for e in events if not e.released]
+    assert len(paru) == 1 and paru[0].event == "HICP YoY"
+    assert len(attendu) == 1 and attendu[0].consensus == "210K"
+
+
+def test_calendrier_ignore_les_lignes_incompletes():
+    from veille_financiere.sources.lse import LseSource
+    payload = [
+        {"date": "2026-08-20", "event": "Valide", "actual": "1%"},
+        {"date": None, "event": "Sans date"},
+        {"date": "2026-08-20", "event": None},
+    ]
+    src = LseSource(FakeFetcher(payload), api_key="k")
+    events = src.fetch_calendar([], dt.date(2026, 8, 20), dt.date(2026, 8, 20))
+    assert len(events) == 1
+
+
+def test_surprise_compare_constate_et_consensus():
+    from veille_financiere.models import CalendarEvent
+    e = CalendarEvent("lse", dt.date(2026, 8, 20), "US", "Claims",
+                      actual="209K", consensus="210K")
+    assert e.surprise() == pytest.approx(-1000.0)
+
+
+@pytest.mark.parametrize("actual,consensus", [
+    (None, "210K"), ("209K", None), ("n/a", "210K"), ("", "210K"),
+])
+def test_surprise_absente_quand_incomparable(actual, consensus):
+    from veille_financiere.models import CalendarEvent
+    e = CalendarEvent("lse", dt.date(2026, 8, 20), "US", "X",
+                      actual=actual, consensus=consensus)
+    assert e.surprise() is None
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("209K", 209_000.0), ("1.5M", 1_500_000.0), ("3.2%", 3.2),
+    ("-3.28", -3.28), ("1,777K", 1_777_000.0), ("2.1B", 2_100_000_000.0),
+])
+def test_conversion_des_valeurs_textuelles(raw, expected):
+    from veille_financiere.models import _to_number
+    assert _to_number(raw) == pytest.approx(expected)

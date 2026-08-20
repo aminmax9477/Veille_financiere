@@ -18,7 +18,7 @@ from __future__ import annotations
 import datetime as dt
 from typing import Any
 
-from ..models import Observation, SourceError
+from ..models import CalendarEvent, Observation, SourceError
 from .base import Source, parse_period
 
 BASE = "https://api.londonstrategicedge.com/vault"
@@ -113,6 +113,45 @@ class LseSource(Source):
         if not out:
             raise SourceError("aucun rendement exploitable")
         return out
+
+
+    # ------------------------------------------------------------------
+
+    def fetch_calendar(self, regions: list[str], start: dt.date,
+                       end: dt.date, limit: int = 400) -> list[CalendarEvent]:
+        """Agenda macroeconomique sur une fenetre de dates.
+
+        Renvoie aussi bien les publications deja parues (champ ``actual``
+        renseigne) que celles encore attendues, ce qui permet a une veille
+        du matin de dire a la fois ce qui est tombe depuis hier et ce qui
+        est attendu dans la journee.
+        """
+        rows = self._rows("/ref/economic_calendar", {
+            "region": ",".join(regions) if regions else None,
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "order": "asc",
+            "limit": limit,
+        })
+        events: list[CalendarEvent] = []
+        for row in rows:
+            day = row.get("date")
+            label = row.get("event")
+            if not day or not label:
+                continue
+            events.append(CalendarEvent(
+                source=self.name,
+                date=_to_date(day),
+                region=str(row.get("region_code") or ""),
+                event=str(label),
+                time=str(row.get("time") or ""),
+                period=str(row.get("period_hint") or ""),
+                actual=row.get("actual"),
+                previous=row.get("previous"),
+                consensus=row.get("consensus"),
+                forecast=row.get("forecast"),
+            ))
+        return events
 
 
 def _to_date(stamp: str) -> dt.date:

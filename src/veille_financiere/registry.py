@@ -368,6 +368,39 @@ CATALOGUE: dict[str, dict[str, Any]] = {
                        "limit": 90}],
     },
 
+
+    "fx.usdcnh": {
+        "label": "Dollar US / Yuan offshore (CNH)",
+        "unit": "CNH pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [{"source": "lse", "native_id": "USD/CNH", "limit": 90}],
+    },
+    "fx.dxy": {
+        "label": "Indice dollar DXY (panier 6 devises)",
+        "unit": "indice",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [{"source": "lse", "native_id": "DXY/USD", "limit": 90}],
+    },
+    "equity.nasdaq100": {
+        "label": "Nasdaq 100",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [{"source": "lse", "native_id": "NAS100/USD", "limit": 90}],
+    },
+    "rate.ea_10y_aaa": {
+        "label": "Taux 10 ans zone euro (courbe AAA, BCE)",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "ecb",
+             "native_id": "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y", "limit": 90},
+        ],
+    },
+
     # ---------------- Crypto ----------------
     "crypto.btcusd": {
         "label": "Bitcoin / USD",

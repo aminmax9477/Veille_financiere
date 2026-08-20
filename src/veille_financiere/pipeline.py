@@ -11,10 +11,10 @@ from typing import Any
 from . import sources as S
 from .config import Settings, settings as default_settings
 from .http import Fetcher, HttpCache
-from .models import Observation, SeriesResult
+from .models import CalendarEvent, Observation, SeriesResult
 from .quality import (
     Check, check_continuity, check_freshness, check_outlier, consensus,
-    reconcile, summarize,
+    projection, reconcile, summarize,
 )
 from .registry import CATALOGUE, iter_company_specs, iter_specs
 from .storage import Store
@@ -38,6 +38,8 @@ class SeriesReport:
     reference: Observation | None
     by_source: dict[str, list[Observation]]
     checks: list[Check] = field(default_factory=list)
+    # Prevision a venir (FMI notamment), tenue a l'ecart de la reference.
+    outlook: Observation | None = None
 
     @property
     def status(self) -> str:
@@ -80,6 +82,7 @@ class RunResult:
     started_at: dt.datetime
     reports: list[SeriesReport]
     results: list[SeriesResult]
+    events: list[CalendarEvent] = field(default_factory=list)
 
     @property
     def checks(self) -> list[Check]:
@@ -91,7 +94,18 @@ class RunResult:
         s["sources_ok"] = sum(1 for r in self.results if r.ok)
         s["sources_failed"] = sum(1 for r in self.results if not r.ok)
         s["observations"] = sum(len(r.observations) for r in self.results)
+        s["events"] = len(self.events)
         return s
+
+    def events_released(self) -> list[CalendarEvent]:
+        """Publications deja parues, les plus recentes en tete."""
+        return sorted([e for e in self.events if e.released],
+                      key=lambda e: (e.date, e.time), reverse=True)
+
+    def events_upcoming(self) -> list[CalendarEvent]:
+        """Publications encore attendues, par ordre chronologique."""
+        return sorted([e for e in self.events if not e.released],
+                      key=lambda e: (e.date, e.time))
 
 
 def build_sources(fetcher: Fetcher, cfg: Settings) -> dict[str, S.Source]:
@@ -104,13 +118,14 @@ def build_sources(fetcher: Fetcher, cfg: Settings) -> dict[str, S.Source]:
         "oecd": S.OecdSource(fetcher),
         "coingecko": S.CoinGeckoSource(fetcher),
         "frankfurter": S.FrankfurterSource(fetcher),
-        "yahoo": S.YahooSource(fetcher),
         "sec_edgar": S.SecEdgarSource(fetcher, cfg.sec_contact),
     }
     if cfg.fred_api_key:
         reg["fred"] = S.FredSource(fetcher, cfg.fred_api_key)
     else:
         log.warning("FRED_API_KEY absente: couverture macro US desactivee")
+    if cfg.enable_yahoo:
+        reg["yahoo"] = S.YahooSource(fetcher)
     if cfg.lse_api_key:
         reg["lse"] = S.LseSource(fetcher, cfg.lse_api_key)
     else:
@@ -132,9 +147,28 @@ def collect(specs: list[dict[str, Any]], registry: dict[str, S.Source],
     return results
 
 
+def collect_calendar(registry: dict[str, S.Source],
+                     cfg: Settings) -> list[CalendarEvent]:
+    """Agenda macro autour du jour courant; jamais bloquant."""
+    src = registry.get("lse")
+    if src is None:
+        return []
+    today = dt.date.today()
+    try:
+        return src.fetch_calendar(
+            list(cfg.calendar_regions),
+            today - dt.timedelta(days=cfg.calendar_lookback_days),
+            today + dt.timedelta(days=cfg.calendar_lookahead_days),
+        )
+    except Exception as exc:  # noqa: BLE001 - l'agenda ne doit jamais casser le run
+        log.warning("agenda economique indisponible: %s", exc)
+        return []
+
+
 def run(cfg: Settings | None = None, include_fundamentals: bool = True,
         only_sources: set[str] | None = None,
         only_series: set[str] | None = None,
+        with_calendar: bool = True,
         persist: bool = True) -> RunResult:
     cfg = cfg or default_settings
     run_id = uuid.uuid4().hex[:12]
@@ -146,10 +180,14 @@ def run(cfg: Settings | None = None, include_fundamentals: bool = True,
     specs = iter_specs()
     if include_fundamentals:
         specs += iter_company_specs()
-    if only_series:
+    # Un ensemble vide veut dire "aucune serie" (cas de la commande agenda),
+    # a distinguer de None qui veut dire "toutes".
+    if only_series is not None:
         specs = [s for s in specs if s["series_id"] in only_series]
 
     results = collect(specs, registry, only_sources)
+    events = (collect_calendar(registry, cfg)
+              if with_calendar and not only_sources else [])
 
     # Regroupement par serie canonique.
     grouped: dict[str, dict[str, list[Observation]]] = defaultdict(dict)
@@ -166,6 +204,7 @@ def run(cfg: Settings | None = None, include_fundamentals: bool = True,
         frequency = entry.get("frequency", spec.get("frequency", ""))
         flat = [o for obs in by_source.values() for o in obs]
         ref = consensus(by_source, SOURCE_PRIORITY)
+        outlook = projection(by_source)
 
         checks = [
             check_freshness(series_id, flat, frequency),
@@ -182,6 +221,7 @@ def run(cfg: Settings | None = None, include_fundamentals: bool = True,
             unit=entry.get("unit", spec.get("unit", "")),
             category=category, frequency=frequency,
             reference=ref, by_source=by_source, checks=checks,
+            outlook=outlook,
         ))
 
     # Les series entierement en echec meritent d'apparaitre dans le rapport.
@@ -202,7 +242,7 @@ def run(cfg: Settings | None = None, include_fundamentals: bool = True,
         ))
 
     result = RunResult(run_id=run_id, started_at=started, reports=reports,
-                       results=results)
+                       results=results, events=events)
 
     if persist:
         store = Store(cfg.db_path)
@@ -210,6 +250,7 @@ def run(cfg: Settings | None = None, include_fundamentals: bool = True,
             for res in results:
                 if res.ok:
                     store.upsert_observations(res.observations)
+            store.upsert_events(events)
             store.log_run(run_id, started.isoformat(), results)
             store.log_checks(run_id, started.isoformat(), result.checks)
         finally:

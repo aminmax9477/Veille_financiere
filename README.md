@@ -28,6 +28,7 @@ la SEC exige un contact identifiable dans le `User-Agent`.
 
 ```bash
 veille doctor                          # verifier la config et joindre les sources
+veille agenda --days 2                 # agenda macro seul, sans collecter les series
 veille catalogue                       # lister les series suivies
 veille collect                         # collecte + rapport console
 veille collect -f markdown -o veille.md
@@ -57,7 +58,7 @@ une tache planifiee.
 | **SEC EDGAR** | Fondamentaux XBRL des societes americaines | non (contact recommande) | tres bonne |
 | **CoinGecko** | Prix crypto | non | bonne (debit limite) |
 | **Frankfurter** | Change (references BCE) | non | tres bonne |
-| **Yahoo Finance** | Actions, indices, matieres premieres | non | **instable** (voir plus bas) |
+| **Yahoo Finance** | Actions, indices, matieres premieres | non | **desactive par defaut** (voir plus bas) |
 
 ### London Strategic Edge
 
@@ -75,6 +76,22 @@ Trois familles d'endpoints sont exploitees, selectionnees par la cle `mode`
 d'une entree du catalogue : `candles` (chandeliers OHLCV), `series`
 (couples date/valeur pour la macro et les rendements) et `bond_yields`.
 
+### Agenda macroeconomique
+
+Le rapport s'ouvre sur ce qui est tombe et ce qui est attendu, en deux
+tableaux : **deja paru** (avec constate, consensus et precedent, et un
+verdict au-dessus / conforme / en dessous) et **attendu** (heure de
+publication et consensus). C'est ce qui manquait le plus a une veille du
+matin : savoir que la BCE publie ses minutes a 11h30 vaut souvent mieux
+qu'une decimale de plus sur le CAC.
+
+L'agenda est aussi la source la plus fraiche pour la macro. Le 20 aout, la
+serie d'inflation zone euro s'arretait a juin, alors que l'agenda portait
+deja le HICP de juillet publie la veille. Quand un chiffre vient de sortir,
+il apparait la avant d'apparaitre dans les series.
+
+`veille agenda` interroge l'agenda seul, sans collecter les series.
+
 ### A propos de Yahoo Finance
 
 L'API de Yahoo est non documentee et limitee par adresse IP. Depuis certains
@@ -91,7 +108,10 @@ une requete mal formee, pas un hote en panne.
 
 Depuis le cablage de London Strategic Edge, plus aucune serie ne depend de
 Yahoo seul : les trois qui manquaient au rapport (CAC 40, Euro Stoxx 50, or)
-sont desormais servies par LSE.
+sont desormais servies par LSE. Yahoo est donc **desactive par defaut** — il
+ne faisait plus qu'ajouter une minute et une trentaine de lignes d'erreur
+par run. `VF_ENABLE_YAHOO=1` le remet en service pour qui dispose d'une
+sortie reseau moins sollicitee.
 
 ## Controles qualite
 
@@ -153,15 +173,42 @@ Tout est persiste dans `data/veille.sqlite3` :
 Le cache HTTP (`data/cache/`) evite de solliciter inutilement les APIs
 limitees en debit.
 
+## Fraicheur reelle
+
+Le `close` d'une bougie quotidienne **en cours** est deja le dernier prix
+traite — verifie en comparant la bougie `1d` et la derniere bougie `1h`
+d'un meme instrument, qui donnent la meme valeur. Interroger l'intraday ne
+fournirait donc pas un chiffre plus recent, seulement le chemin parcouru.
+
+Ce que cela donne selon l'heure d'execution :
+
+| Type | A 7h du matin | En seance |
+|---|---|---|
+| Indices europeens | derniere cloture (la premiere bougie du jour n'apparait qu'a 8h) | prix courant |
+| Indices US | future en preouverture | prix courant |
+| Change, crypto | prix courant (marches ouverts) | prix courant |
+| Taux, macro | derniere publication officielle | idem |
+
+Un WebSocket existe chez LSE mais n'a pas ete cable : il suppose un
+processus connecte en permanence, ce qu'une tache declenchee une fois par
+jour ne peut pas exploiter. Un simple appel REST est strictement meilleur
+dans ce cas.
+
 ## Limites connues
 
 - **Inflation zone euro et France** : Eurostat et la BCE s'arretent a
   decembre 2025 et divergent de 0,1 point sur ce mois (2,0 % contre 1,9 %),
   ecart absorbe par la tolerance macro. LSE prend le relais jusqu'a juin
   2026 et fournit la valeur de reference.
-- **Rendements souverains LSE** : environ dix jours de retard, ce que le
-  controle de fraicheur signale a chaque run. FRED reste plus a jour sur les
-  taux americains et sert donc de reference.
+- **Rendements souverains allemands et francais** : environ dix jours de
+  retard chez LSE, signale a chaque run. Pour la zone euro, la courbe AAA de
+  la BCE (`rate.ea_10y_aaa`) est quotidienne et a J-1. Sur les taux
+  americains, FRED reste le plus a jour (J-2) : les instruments LSE
+  `USB10Y/USD` et consorts cotent un **prix de future** (108,5) et non un
+  rendement (4,71), ils ne sont donc pas utilisables comme taux.
+- **Projections** : le FMI publie jusqu'en 2031. Ces valeurs sont exclues du
+  chiffre de reference et regroupees dans une section a part, pour ne pas
+  presenter une prevision comme le dernier chiffre connu.
 - **IBEX 35** : la serie LSE s'arrete a juin 2026 et est signalee comme
   obsolete a chaque run.
 - **Resultat net trimestriel** : le quatrieme trimestre n'apparait pas

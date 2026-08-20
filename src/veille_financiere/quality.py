@@ -236,21 +236,39 @@ def _scale_hint(a: float, b: float) -> str:
 
 
 def consensus(by_source: dict[str, list[Observation]],
-              priority: Sequence[str]) -> Observation | None:
+              priority: Sequence[str],
+              today: dt.date | None = None) -> Observation | None:
     """Choisit la valeur de reference d'une serie.
 
     On privilegie la source la plus fraiche; a fraicheur egale, l'ordre de
     priorite (source officielle avant source de marche) tranche.
+
+    Les observations datees dans le futur sont ecartees: le FMI publie des
+    projections jusqu'en 2031, et les retenir reviendrait a presenter une
+    prevision comme le dernier chiffre connu. Elles restent accessibles via
+    ``projection()``.
     """
+    today = today or dt.date.today()
     latest: list[Observation] = []
     for obs in by_source.values():
-        if obs:
-            latest.append(max(obs, key=lambda o: o.date))
+        realised = [o for o in obs if o.date <= today]
+        if realised:
+            latest.append(max(realised, key=lambda o: o.date))
     if not latest:
         return None
     rank = {s: i for i, s in enumerate(priority)}
     return sorted(latest, key=lambda o: (-o.date.toordinal(),
                                          rank.get(o.source, 99)))[0]
+
+
+def projection(by_source: dict[str, list[Observation]],
+               today: dt.date | None = None) -> Observation | None:
+    """Premiere projection a venir, si la serie en comporte une."""
+    today = today or dt.date.today()
+    future = [o for obs in by_source.values() for o in obs if o.date > today]
+    if not future:
+        return None
+    return min(future, key=lambda o: o.date)
 
 
 def summarize(checks: Iterable[Check]) -> dict[str, int]:

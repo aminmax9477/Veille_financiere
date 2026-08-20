@@ -48,6 +48,7 @@ def render_console(run: RunResult) -> str:
         f"   (run {run.run_id})",
         "=" * 96,
         f"  {s['series']} series | {s['observations']} observations | "
+        f"{s['events']} evenements | "
         f"{s['sources_ok']} appels OK / {s['sources_failed']} en echec",
         f"  controles: {s['passed']}/{s['total']} valides, "
         f"{s['warning']} avertissement(s), {s['error']} erreur(s)",
@@ -72,6 +73,30 @@ def render_console(run: RunResult) -> str:
             )
         lines.append("")
 
+    released, upcoming = run.events_released(), run.events_upcoming()
+    if released or upcoming:
+        lines.append("-- AGENDA MACROECONOMIQUE " + "-" * 58)
+        for title, evts in (("deja paru", released[:8]),
+                            ("attendu", upcoming[:8])):
+            if not evts:
+                continue
+            lines.append(f"   [{title}]")
+            for e in evts:
+                lines.append(
+                    f"     {e.time or '--':9} {e.region:3} "
+                    f"{e.event[:38]:40} constate={str(e.actual or '--'):>9} "
+                    f"consensus={str(e.consensus or '--'):>9}")
+        lines.append("")
+
+    outlooks = [r for r in run.reports if r.outlook]
+    if outlooks:
+        lines.append("-- PROJECTIONS " + "-" * 69)
+        for rep in sorted(outlooks, key=lambda r: r.series_id):
+            o = rep.outlook
+            lines.append(f"   {rep.label[:40]:42} {o.value:>10,.2f} "
+                         f"a l'horizon {o.date.year} ({o.source})")
+        lines.append("")
+
     problems = [c for r in run.reports for c in r.checks if not c.passed]
     if problems:
         lines.append("-- POINTS D'ATTENTION " + "-" * 62)
@@ -89,6 +114,22 @@ def render_console(run: RunResult) -> str:
             lines.append(f"   {r.source:12} {r.series_id:32} {r.error[:70]}")
         lines.append("")
     return "\n".join(lines)
+
+
+def _fmt_event_row(e) -> str:
+    surprise = e.surprise()
+    if surprise is None:
+        verdict = ""
+    elif surprise > 0:
+        verdict = "au-dessus"
+    elif surprise < 0:
+        verdict = "en dessous"
+    else:
+        verdict = "conforme"
+    return (f"| {e.time or '--'} | {e.region} | {e.event} "
+            f"{'(' + e.period + ')' if e.period else ''} | "
+            f"{e.actual or '--'} | {e.consensus or '--'} | "
+            f"{e.previous or '--'} | {verdict} |")
 
 
 def render_markdown(run: RunResult) -> str:
@@ -121,6 +162,38 @@ def render_markdown(run: RunResult) -> str:
                 f"{_fmt_change(rep)} | {ref.date if ref else 'n/d'} | "
                 f"{ref.source if ref else '-'} | {len(rep.by_source)} |"
             )
+        out.append("")
+
+    released, upcoming = run.events_released(), run.events_upcoming()
+    if released or upcoming:
+        out += ["## Agenda macroeconomique", ""]
+        if released:
+            out += [f"### Deja paru ({len(released)})", "",
+                    "| Heure | Zone | Publication | Constate | Consensus | "
+                    "Precedent | |", "|---|---|---|---:|---:|---:|---|"]
+            out += [_fmt_event_row(e) for e in released[:20]]
+            if len(released) > 20:
+                out.append(f"\n*... et {len(released) - 20} autres.*")
+            out.append("")
+        if upcoming:
+            out += [f"### Attendu ({len(upcoming)})", "",
+                    "| Heure | Zone | Publication | Constate | Consensus | "
+                    "Precedent | |", "|---|---|---|---:|---:|---:|---|"]
+            out += [_fmt_event_row(e) for e in upcoming[:20]]
+            if len(upcoming) > 20:
+                out.append(f"\n*... et {len(upcoming) - 20} autres.*")
+            out.append("")
+
+    outlooks = [r for r in run.reports if r.outlook]
+    if outlooks:
+        out += ["## Projections", "",
+                "*Previsions, tenues a l'ecart des chiffres constates.*", "",
+                "| Serie | Valeur projetee | Horizon | Source |",
+                "|---|---:|---|---|"]
+        for rep in sorted(outlooks, key=lambda r: r.series_id):
+            o = rep.outlook
+            out.append(f"| {rep.label} | {o.value:,.2f} {rep.unit} | "
+                       f"{o.date.year} | {o.source} |")
         out.append("")
 
     problems = [c for r in run.reports for c in r.checks if not c.passed]
