@@ -209,3 +209,26 @@ def test_frankfurter_lit_une_serie_temporelle():
     src = FrankfurterSource(FakeFetcher(payload))
     obs = src._fetch_series({"series_id": "fx.eurusd", "native_id": "EUR/USD"})
     assert len(obs) == 2 and obs[0].date == dt.date(2026, 8, 20)
+
+
+def test_coingecko_agrege_en_cloture_quotidienne():
+    """market_chart renvoie des points horaires: on garde le dernier de
+    chaque journee UTC pour obtenir une cloture comparable a Coinbase."""
+    from veille_financiere.sources.coingecko import CoinGeckoSource
+    j19 = int(dt.datetime(2026, 8, 19, 12, tzinfo=dt.timezone.utc).timestamp() * 1000)
+    j19b = int(dt.datetime(2026, 8, 19, 23, tzinfo=dt.timezone.utc).timestamp() * 1000)
+    j20 = int(dt.datetime(2026, 8, 20, 16, tzinfo=dt.timezone.utc).timestamp() * 1000)
+    payload = {"prices": [[j19, 69000.0], [j19b, 69487.6], [j20, 72280.2]]}
+    src = CoinGeckoSource(FakeFetcher(payload))
+    obs = src._fetch_series({"series_id": "crypto.btcusd", "native_id": "bitcoin"})
+    by_date = {o.date: o.value for o in obs}
+    assert len(obs) == 2
+    assert by_date[dt.date(2026, 8, 19)] == pytest.approx(69487.6)
+    assert by_date[dt.date(2026, 8, 20)] == pytest.approx(72280.2)
+
+
+def test_coingecko_signale_un_historique_absent():
+    from veille_financiere.sources.coingecko import CoinGeckoSource
+    src = CoinGeckoSource(FakeFetcher({"status": {"error_code": 429}}))
+    with pytest.raises(SourceError):
+        src._fetch_series({"series_id": "crypto.btcusd", "native_id": "bitcoin"})

@@ -39,6 +39,16 @@ _DEFAULT_MIN_INTERVAL = 0.25
 _last_call: dict[str, float] = {}
 _lock = threading.Lock()
 
+# Nombre d'echecs consecutifs sur un hote avant de le declarer indisponible
+# pour le reste du run. Sans ce garde-fou, une source hors service (Yahoo
+# renvoyant des 429 en continu) fait perdre plusieurs minutes en reessais
+# dont on sait deja qu'ils echoueront.
+CIRCUIT_THRESHOLD = int(os.environ.get("VF_CIRCUIT_THRESHOLD", "3"))
+
+
+class CircuitOpen(RuntimeError):
+    """Levee quand un hote a ete declare indisponible pour ce run."""
+
 
 def _throttle(url: str) -> None:
     host = urlsplit(url).netloc
@@ -93,12 +103,25 @@ class Fetcher:
         cache: HttpCache | None = None,
         max_attempts: int = 4,
         timeout: int = 25,
+        circuit_threshold: int = CIRCUIT_THRESHOLD,
     ) -> None:
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": USER_AGENT, "Accept": "*/*"})
         self.cache = cache
         self.max_attempts = max_attempts
         self.timeout = timeout
+        self.circuit_threshold = circuit_threshold
+        self._failures: dict[str, int] = {}
+
+    def _circuit_is_open(self, host: str) -> bool:
+        return (self.circuit_threshold > 0
+                and self._failures.get(host, 0) >= self.circuit_threshold)
+
+    def _record(self, host: str, ok: bool) -> None:
+        if ok:
+            self._failures.pop(host, None)
+        else:
+            self._failures[host] = self._failures.get(host, 0) + 1
 
     def _cache_key(self, url: str, params: dict | None, headers: dict | None) -> str:
         return json.dumps(
@@ -122,6 +145,12 @@ class Fetcher:
                 log.debug("cache hit %s", url)
                 return hit
 
+        host = urlsplit(url).netloc
+        if self._circuit_is_open(host):
+            raise CircuitOpen(
+                f"{host} declare indisponible apres "
+                f"{self._failures[host]} echecs consecutifs; appel non tente")
+
         last_err: Exception | None = None
         for attempt in range(1, self.max_attempts + 1):
             _throttle(url)
@@ -139,16 +168,20 @@ class Fetcher:
                 self._sleep_backoff(attempt, resp.headers.get("Retry-After"))
                 continue
             if resp.status_code >= 400:
-                # 4xx non transitoire: inutile d'insister.
+                # 4xx non transitoire: inutile d'insister. Ce n'est pas un
+                # signe d'indisponibilite de l'hote, on n'incremente donc pas
+                # le compteur du disjoncteur.
                 raise RuntimeError(
                     f"HTTP {resp.status_code} on {url}: {resp.text[:200]}"
                 )
 
             body = resp.json() if as_json else resp.text
+            self._record(host, ok=True)
             if use_cache and self.cache is not None:
                 self.cache.set(key, body)
             return body
 
+        self._record(host, ok=False)
         raise RuntimeError(f"echec apres {self.max_attempts} tentatives: {last_err}")
 
     def _sleep_backoff(self, attempt: int, retry_after: str | None = None) -> None:

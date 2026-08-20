@@ -100,3 +100,89 @@ def test_observation_serialisable():
     row = obs().as_row()
     assert row["date"] == "2026-08-20"
     json.dumps(row)   # ne doit pas lever
+
+
+# ------------------------------------------------------------- disjoncteur
+class FlakyTransport:
+    """Session factice: renvoie toujours le meme code HTTP."""
+
+    def __init__(self, status, body=None):
+        self.status, self.body, self.calls = status, body or {}, 0
+        self.headers = {}
+
+    def get(self, url, params=None, headers=None, timeout=None):
+        self.calls += 1
+        return self
+
+    @property
+    def status_code(self):
+        return self.status
+
+    @property
+    def text(self):
+        return "erreur"
+
+    def json(self):
+        return self.body
+
+
+def _fetcher(status, body=None, **kw):
+    from veille_financiere.http import Fetcher
+    f = Fetcher(cache=None, max_attempts=1, **kw)
+    f.session = FlakyTransport(status, body)
+    return f
+
+
+def test_disjoncteur_coupe_apres_trois_echecs(monkeypatch):
+    from veille_financiere.http import CircuitOpen
+    monkeypatch.setattr("veille_financiere.http.time.sleep", lambda *_: None)
+    f = _fetcher(429, circuit_threshold=3)
+
+    for _ in range(3):
+        with pytest.raises(RuntimeError):
+            f.fetch("https://exemple.test/a")
+    calls_avant = f.session.calls
+
+    # Le quatrieme appel ne doit plus atteindre le reseau.
+    with pytest.raises(CircuitOpen):
+        f.fetch("https://exemple.test/b")
+    assert f.session.calls == calls_avant
+
+
+def test_disjoncteur_se_referme_apres_un_succes(monkeypatch):
+    monkeypatch.setattr("veille_financiere.http.time.sleep", lambda *_: None)
+    f = _fetcher(429, circuit_threshold=3)
+    with pytest.raises(RuntimeError):
+        f.fetch("https://exemple.test/a")
+    assert f._failures["exemple.test"] == 1
+
+    f.session.status = 200
+    f.session.body = {"ok": True}
+    assert f.fetch("https://exemple.test/a") == {"ok": True}
+    assert "exemple.test" not in f._failures
+
+
+def test_une_4xx_definitive_n_ouvre_pas_le_disjoncteur(monkeypatch):
+    """Un 404 signale une mauvaise requete, pas un hote en panne."""
+    monkeypatch.setattr("veille_financiere.http.time.sleep", lambda *_: None)
+    f = _fetcher(404, circuit_threshold=3)
+    for _ in range(4):
+        with pytest.raises(RuntimeError):
+            f.fetch("https://exemple.test/a")
+    assert f._failures.get("exemple.test", 0) == 0
+
+
+def test_disjoncteur_isole_les_hotes(monkeypatch):
+    from veille_financiere.http import CircuitOpen
+    monkeypatch.setattr("veille_financiere.http.time.sleep", lambda *_: None)
+    f = _fetcher(429, circuit_threshold=2)
+    for _ in range(2):
+        with pytest.raises(RuntimeError):
+            f.fetch("https://mauvais.test/a")
+    with pytest.raises(CircuitOpen):
+        f.fetch("https://mauvais.test/b")
+
+    # Un autre hote reste joignable.
+    f.session.status = 200
+    f.session.body = {"ok": 1}
+    assert f.fetch("https://bon.test/a") == {"ok": 1}

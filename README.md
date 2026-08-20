@@ -62,7 +62,12 @@ environnements (conteneurs, CI, sorties mutualisees) elle renvoie des `429`
 en continu. Le projet la conserve en complement mais **ne s'appuie jamais
 dessus seul** quand une alternative existe : les indices americains viennent
 de FRED, l'Euro Stoxx 50 de la BCE, l'indice boursier francais de l'OCDE.
-Une source qui echoue n'interrompt jamais la collecte.
+Une source qui echoue n'interrompt jamais la collecte. Un **disjoncteur**
+coupe les appels vers un hote apres trois echecs consecutifs : sans lui, une
+source hors service fait perdre plusieurs minutes en reessais dont l'issue
+est deja connue (le run complet passe de plus de quinze minutes a environ une
+minute). Une reponse 4xx definitive n'ouvre pas le disjoncteur : elle signale
+une requete mal formee, pas un hote en panne.
 
 Seul l'or (`commodity.gold`) n'a aujourd'hui pas d'alternative publique
 gratuite : la serie LBMA de FRED est arretee depuis 2023.
@@ -115,6 +120,21 @@ Tout est persiste dans `data/veille.sqlite3` :
 
 Le cache HTTP (`data/cache/`) evite de solliciter inutilement les APIs
 limitees en debit.
+
+## Limites connues
+
+- **Inflation zone euro et France** : les series IPCH s'arretent a
+  decembre 2025. Ce n'est pas un defaut de collecte — Eurostat et la BCE,
+  interroges independamment, renvoient la meme derniere periode. Le controle
+  de fraicheur signale l'ecart plutot que de le masquer. A noter : les deux
+  sources divergent de 0,1 point sur decembre 2025 (2,0 % contre 1,9 %),
+  ecart absorbe par la tolerance macro.
+- **Resultat net trimestriel** : le quatrieme trimestre n'apparait pas
+  toujours comme periode de 90 jours dans XBRL, les societes ne publiant
+  alors que le cumul annuel dans leur 10-K. La serie peut donc sauter un
+  trimestre. Le deduire (annuel moins cumul 9 mois) reste a faire.
+- **Or** : aucune source publique gratuite fiable n'a ete trouvee en
+  remplacement de Yahoo. La serie LBMA de FRED est arretee depuis 2023.
 
 ## Un point de vigilance sur les fondamentaux SEC
 
