@@ -294,20 +294,27 @@ dans ce cas.
   qu'un indice MIB ESG, Twelve Data le catalogue mais le reserve a ses
   offres payantes, le flux `IT40/EUR` de LSE appartient a la famille cassee
   decrite plus haut, et Stooq exige desormais un navigateur avec JavaScript.
-  Milan est donc suivie par deux detours, aucun ne pretendant etre l'indice :
-  l'**indice OCDE des cours boursiers italiens**, mensuel et officiel, et un
-  **ETF repliquant** cote a Paris pour la variation quotidienne.
+  Milan est donc suivie par l'**indice OCDE des cours boursiers italiens**,
+  mensuel et officiel, qui ne pretend pas etre le FTSE MIB.
 
-  Le choix de l'ETF n'est pas arbitraire. Six fonds repliquant le FTSE MIB
-  ont ete compares : ceux de Londres et de Francfort affichent des
-  variations quasi nulles, faute de volume sur ces cotations secondaires.
-  Les deux fonds parisiens, en revanche, concordent a **0,14 point d'ecart
-  median sur 255 seances**. Un seul jour les separe nettement, le
-  9 decembre 2025, ou le fonds Lyxor decroche de 3,8 points : c'est son
-  detachement de dividende. C'est le fonds Amundi, capitalisant, qui a donc
-  ete retenu — il n'a aucun decrochage de ce type sur la periode. Son niveau
-  en euros par part ne veut rien dire en soi ; c'est sa variation
-  quotidienne qui porte l'information.
+  La valeur officielle existe pourtant : Borsa Italiana, qui exploite la
+  place, la publie sur son site — 52 665,82 au 20 aout 2026. La recuperer
+  supposerait d'extraire une page HTML, ce que le reste du projet ne fait
+  nulle part, avec la fragilite et les questions de licence que cela porte.
+  Le choix a ete laisse ouvert plutot que tranche en silence.
+
+  Un ETF repliquant avait ete essaye comme approximation quotidienne, puis
+  **retire**. Ses cotations parisiennes se traitent a quelques centaines de
+  parts par seance et reconduisent leur cloture d'un jour sur l'autre : le
+  20 aout 2026, l'indice officiel montait de 0,09 % quand l'ETF affichait
+  -1,00 %.
+
+  L'erreur de methode merite d'etre notee, car elle etait seduisante. Deux
+  trackers compares l'un a l'autre semblaient concorder a 0,14 point d'ecart
+  median sur 255 seances — un resultat rassurant, et faux : ils etaient
+  figes les memes jours. Le recoupement mesurait leur immobilite commune,
+  pas leur fidelite a l'indice. Comparer deux sources entre elles ne vaut
+  que si elles peuvent se tromper independamment.
 - **Resultat net trimestriel** : le quatrieme trimestre n'apparait pas
   toujours comme periode de 90 jours dans XBRL, les societes ne publiant
   alors que le cumul annuel dans leur 10-K. La serie peut donc sauter un

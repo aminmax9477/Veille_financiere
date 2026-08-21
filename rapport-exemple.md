@@ -1,8 +1,8 @@
-# Veille financiere - 21/08/2026 00:35 UTC
+# Veille financiere - 21/08/2026 00:47 UTC
 
-*Run `922488b95e25` - 162 series, 18577 observations, 185/186 appels reussis.*
+*Run `656acec2c45e` - 161 series, 18322 observations, 184/185 appels reussis.*
 
-**Qualite** : 644/649 controles valides (5 avertissement(s), 0 erreur(s))
+**Qualite** : 640/645 controles valides (5 avertissement(s), 0 erreur(s))
 
 ## Marches actions
 
@@ -13,26 +13,25 @@
 | OK | Bovespa (Sao Paulo) | 167,927.15 | points | +0.06% | 2026-08-20 | eodhd | 1 |
 | OK | CAC 40 | 8,461.90 | points | -0.49% | 2026-08-20 | lse | 1 |
 | OK | China A50 | 14,705.20 | points | -0.62% | 2026-08-20 | lse | 1 |
-| OK | DAX (Allemagne) | 25,991.80 | points | +0.05% | 2026-08-21 | lse | 1 |
-| OK | Dow Jones Industrial Average | 52,821.90 | points | +0.04% | 2026-08-21 | lse | 2 |
-| OK | Euro Stoxx 50 | 6,428.60 | points | +0.08% | 2026-08-21 | lse | 1 |
+| OK | DAX (Allemagne) | 26,000.80 | points | +0.08% | 2026-08-21 | lse | 1 |
+| OK | Dow Jones Industrial Average | 52,813.90 | points | +0.02% | 2026-08-21 | lse | 2 |
+| OK | Euro Stoxx 50 | 6,431.60 | points | +0.12% | 2026-08-21 | lse | 1 |
 | OK | Euro Stoxx 50 (releve mensuel BCE) | 6,291.65 | points | +1.82% | 2026-07-31 | ecb | 1 |
 | OK | Indice des cours boursiers France (OCDE, base 100) | 165.82 | indice | +2.13% | 2026-06-30 | oecd | 1 |
-| OK | FTSE 100 (Royaume-Uni) | 10,743.50 | points | -0.00% | 2026-08-21 | lse | 1 |
+| OK | FTSE 100 (Royaume-Uni) | 10,745.50 | points | +0.01% | 2026-08-21 | lse | 1 |
 | OK | Hang Seng (Hong Kong) | 25,698.49 | points | +0.80% | 2026-08-20 | eodhd | 2 |
 | OK | IBEX 35 (Espagne) | 19,811.00 | points | -0.18% | 2026-08-20 | eodhd | 1 |
-| OK | Bourse de Milan (ETF repliquant le FTSE MIB) | 129.34 | EUR par part | -1.00% | 2026-08-20 | eodhd | 1 |
 | OK | Indice des cours boursiers Italie (OCDE, base 100) | 232.02 | indice | +4.48% | 2026-06-30 | oecd | 1 |
 | OK | Kospi (Seoul) | 6,773.97 | points | -1.15% | 2026-08-21 | eodhd | 1 |
 | OK | S&P/BMV IPC (Mexique) | 64,436.38 | points | +0.68% | 2026-08-20 | eodhd | 1 |
 | OK | Nasdaq Composite | 26,331.09 | points | +0.16% | 2026-08-19 | fred | 2 |
-| OK | Nasdaq 100 | 29,262.70 | points | +0.14% | 2026-08-21 | lse | 1 |
+| OK | Nasdaq 100 | 29,283.90 | points | +0.21% | 2026-08-21 | lse | 1 |
 | OK | Nifty 50 (Inde) | 24,231.85 | points | +0.64% | 2026-08-20 | eodhd | 1 |
-| OK | Nikkei 225 (Japon) | 65,590.50 | points | +0.49% | 2026-08-21 | lse | 1 |
+| OK | Nikkei 225 (Japon) | 65,745.50 | points | +0.73% | 2026-08-21 | lse | 1 |
 | OK | Sensex (Bombay) | 77,537.72 | points | +0.82% | 2026-08-20 | eodhd | 1 |
 | OK | Shanghai Composite | 3,903.72 | points | +0.24% | 2026-08-20 | eodhd | 1 |
 | OK | SMI (Suisse) | 14,368.16 | points | -0.13% | 2026-08-20 | eodhd | 1 |
-| OK | S&P 500 | 7,653.20 | points | +0.02% | 2026-08-21 | lse | 2 |
+| OK | S&P 500 | 7,653.70 | points | +0.03% | 2026-08-21 | lse | 2 |
 | OK | Taiex (Taiwan) | 44,933.74 | points | +0.48% | 2026-08-20 | eodhd | 1 |
 | OK | S&P/TSX (Toronto) | 36,365.42 | points | -0.10% | 2026-08-20 | eodhd | 1 |
 | OK | VIX (volatilite implicite S&P 500) | 16.0500 | points | +7.65% | 2026-08-20 | lse | 2 |
@@ -43,16 +42,16 @@
 |---|---|---:|---|---:|---|---|---|
 | OK | Dollar australien / Dollar US | 0.7116 | USD pour 1 AUD | +0.03% | 2026-08-21 | eodhd | 1 |
 | OK | Indice dollar (large, pondere des echanges) | 118.90 | indice | -0.24% | 2026-08-14 | fred | 1 |
-| OK | Indice dollar DXY (panier 6 devises) | 98.7230 | indice | -0.07% | 2026-08-21 | lse | 1 |
-| OK | Euro / Dollar US | 1.1687 | USD pour 1 EUR | +0.00% | 2026-08-21 | lse | 4 |
-| OK | Livre sterling / Dollar US | 1.3642 | USD pour 1 GBP | +0.00% | 2026-08-21 | lse | 3 |
+| OK | Indice dollar DXY (panier 6 devises) | 98.7480 | indice | -0.04% | 2026-08-21 | lse | 1 |
+| OK | Euro / Dollar US | 1.1684 | USD pour 1 EUR | -0.03% | 2026-08-21 | lse | 4 |
+| OK | Livre sterling / Dollar US | 1.3638 | USD pour 1 GBP | -0.03% | 2026-08-21 | lse | 3 |
 | OK | Dollar US / Real bresilien | 5.1979 | BRL pour 1 USD | +0.43% | 2026-08-20 | eodhd | 1 |
 | OK | Dollar US / Dollar canadien | 1.3780 | CAD pour 1 USD | -0.07% | 2026-08-21 | eodhd | 1 |
-| OK | Dollar US / Franc suisse | 0.7997 | CHF pour 1 USD | +0.02% | 2026-08-21 | lse | 2 |
-| OK | Dollar US / Yuan offshore (CNH) | 6.7240 | CNH pour 1 USD | +0.01% | 2026-08-21 | lse | 1 |
+| OK | Dollar US / Franc suisse | 0.8000 | CHF pour 1 USD | +0.06% | 2026-08-21 | lse | 2 |
+| OK | Dollar US / Yuan offshore (CNH) | 6.7241 | CNH pour 1 USD | +0.01% | 2026-08-21 | lse | 1 |
 | OK | Dollar US / Yuan | 6.7412 | CNY pour 1 USD | -0.02% | 2026-08-14 | fred | 1 |
 | OK | Dollar US / Roupie indienne | 95.7100 | INR pour 1 USD | -0.05% | 2026-08-20 | eodhd | 1 |
-| OK | Dollar US / Yen | 159.04 | JPY pour 1 USD | +0.10% | 2026-08-21 | lse | 2 |
+| OK | Dollar US / Yen | 159.10 | JPY pour 1 USD | +0.14% | 2026-08-21 | lse | 2 |
 | OK | Dollar US / Won coreen | 1,392.15 | KRW pour 1 USD | -0.16% | 2026-08-21 | eodhd | 1 |
 | OK | Dollar US / Peso mexicain | 16.9443 | MXN pour 1 USD | -0.07% | 2026-08-21 | eodhd | 1 |
 | OK | Dollar US / Dollar de Singapour | 1.2715 | SGD pour 1 USD | -0.07% | 2026-08-21 | eodhd | 1 |
@@ -73,8 +72,8 @@
 
 | | Serie | Valeur | Unite | Var. | Date | Source | Sources |
 |---|---|---:|---|---:|---|---|---|
-| OK | Bitcoin / USD | 73,644.00 | USD | +0.85% | 2026-08-21 | lse | 3 |
-| OK | Ethereum / USD | 2,340.31 | USD | +0.58% | 2026-08-21 | lse | 3 |
+| OK | Bitcoin / USD | 73,691.99 | USD | +0.92% | 2026-08-21 | lse | 3 |
+| OK | Ethereum / USD | 2,339.58 | USD | +0.55% | 2026-08-21 | lse | 3 |
 
 ## Fondamentaux societes
 
@@ -159,12 +158,12 @@
 
 | | Serie | Valeur | Unite | Var. | Date | Source | Sources |
 |---|---|---:|---|---:|---|---|---|
-| OK | Petrole Brent | 94.5060 | USD/baril | +0.04% | 2026-08-21 | lse | 2 |
-| OK | Cuivre | 6.4540 | USD/livre | +0.11% | 2026-08-21 | lse | 1 |
-| OK | Or | 4,514.24 | USD/once | -0.26% | 2026-08-21 | lse | 1 |
+| OK | Petrole Brent | 94.5460 | USD/baril | +0.08% | 2026-08-21 | lse | 2 |
+| OK | Cuivre | 6.4560 | USD/livre | +0.14% | 2026-08-21 | lse | 1 |
+| OK | Or | 4,510.19 | USD/once | -0.35% | 2026-08-21 | lse | 1 |
 | OK | Gaz naturel | 2.7780 | USD/MMBtu | +0.07% | 2026-08-21 | lse | 1 |
-| OK | Argent | 67.9830 | USD/once | -0.30% | 2026-08-21 | lse | 1 |
-| OK | Petrole WTI | 87.1640 | USD/baril | +0.07% | 2026-08-21 | lse | 2 |
+| OK | Argent | 68.0230 | USD/once | -0.24% | 2026-08-21 | lse | 1 |
+| OK | Petrole WTI | 87.1940 | USD/baril | +0.10% | 2026-08-21 | lse | 2 |
 
 ## Taux d'interet
 
