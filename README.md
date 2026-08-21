@@ -290,9 +290,24 @@ dans ce cas.
 - **Projections** : le FMI publie jusqu'en 2031. Ces valeurs sont exclues du
   chiffre de reference et regroupees dans une section a part, pour ne pas
   presenter une prevision comme le dernier chiffre connu.
-- **FTSE MIB** : introuvable. EODHD n'expose qu'un indice MIB ESG, et le
-  flux `IT40/EUR` de LSE appartient a la famille cassee decrite plus haut.
-  C'est la seule grande place europeenne non couverte.
+- **FTSE MIB** : le niveau de l'indice reste introuvable. EODHD n'expose
+  qu'un indice MIB ESG, Twelve Data le catalogue mais le reserve a ses
+  offres payantes, le flux `IT40/EUR` de LSE appartient a la famille cassee
+  decrite plus haut, et Stooq exige desormais un navigateur avec JavaScript.
+  Milan est donc suivie par deux detours, aucun ne pretendant etre l'indice :
+  l'**indice OCDE des cours boursiers italiens**, mensuel et officiel, et un
+  **ETF repliquant** cote a Paris pour la variation quotidienne.
+
+  Le choix de l'ETF n'est pas arbitraire. Six fonds repliquant le FTSE MIB
+  ont ete compares : ceux de Londres et de Francfort affichent des
+  variations quasi nulles, faute de volume sur ces cotations secondaires.
+  Les deux fonds parisiens, en revanche, concordent a **0,14 point d'ecart
+  median sur 255 seances**. Un seul jour les separe nettement, le
+  9 decembre 2025, ou le fonds Lyxor decroche de 3,8 points : c'est son
+  detachement de dividende. C'est le fonds Amundi, capitalisant, qui a donc
+  ete retenu — il n'a aucun decrochage de ce type sur la periode. Son niveau
+  en euros par part ne veut rien dire en soi ; c'est sa variation
+  quotidienne qui porte l'information.
 - **Resultat net trimestriel** : le quatrieme trimestre n'apparait pas
   toujours comme periode de 90 jours dans XBRL, les societes ne publiant
   alors que le cumul annuel dans leur 10-K. La serie peut donc sauter un

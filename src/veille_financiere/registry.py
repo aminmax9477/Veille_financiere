@@ -688,6 +688,38 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         ],
     },
 
+
+    # ---------------- Italie : l'indice lui-meme est introuvable ----------
+    # Le niveau du FTSE MIB n'est servi correctement par aucune source
+    # cablee : EODHD ne l'expose pas, Twelve Data le catalogue mais le
+    # reserve a ses offres payantes, et le flux IT40 de LSE est fige a juin
+    # 2026 au dixieme de sa valeur. Ces deux series le contournent sans
+    # pretendre etre lui.
+    "equity.it_share_index_m": {
+        "label": "Indice des cours boursiers Italie (OCDE, base 100)",
+        "unit": "indice",
+        "frequency": "monthly",
+        "category": "actions",
+        "providers": [
+            {"source": "oecd",
+             "native_id": "OECD.SDD.STES,DSD_STES@DF_FINMARK,4.0/ITA.M.SHARE......",
+             "params": {"startPeriod": "2023-01"}, "limit": 48},
+        ],
+    },
+    "equity.it_ftsemib_tracker": {
+        # Cote en euros par part, donc le niveau ne veut rien dire en soi :
+        # c'est la variation quotidienne qui porte l'information. Le fonds
+        # est capitalisant, ce qui evite les decrochages de detachement de
+        # dividende qui polluent son equivalent distribuant.
+        "label": "Bourse de Milan (ETF repliquant le FTSE MIB)",
+        "unit": "EUR par part",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "FMI", "market": "PA", "limit": 90},
+        ],
+    },
+
     # ---------------- Change hors G7 ----------------
     "fx.usdkrw": {
         "label": "Dollar US / Won coreen",
