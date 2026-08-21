@@ -51,6 +51,7 @@ une tache planifiee.
 | **FRED** (Fed de Saint-Louis) | Macro US, taux, indices, matieres premieres, crypto (Coinbase) | oui, gratuite | tres bonne |
 | **London Strategic Edge** | Indices mondiaux, change, crypto, matieres premieres, macro 194 pays | oui | tres bonne |
 | **EODHD** | Rendements souverains quotidiens (240 tenors), indices | oui | tres bonne |
+| **Borsa Italiana** | FTSE MIB (page publique, seule lecture HTML du projet) | non | bonne, sous surveillance |
 | **BCE** (portail de donnees) | Change, taux directeurs, inflation zone euro | non | tres bonne |
 | **Eurostat** | Inflation IPCH par pays | non | bonne (jeu de donnees en retard) |
 | **OCDE** | Indices de cours boursiers | non | bonne |
@@ -113,6 +114,39 @@ Deux verifications ont oriente ce cablage, contre l'intuition de depart :
 - **`USB10Y/USD` chez LSE cote un prix de future**, autour de 108, et non un
   rendement autour de 4,7. Le symbole est tentant parce qu'il est a jour,
   mais il ne mesure pas la meme chose.
+
+### La seule page HTML du projet
+
+Le FTSE MIB est lu sur la page publique de Borsa Italiana, faute d'API qui
+le serve. Lire une page prevue pour des yeux humains est fragile d'une
+facon particuliere : le danger n'est pas qu'elle casse — une page disparue
+leve une erreur toute seule — mais qu'une lecture glisse d'un champ et
+renvoie un autre nombre, plausible et faux, qui partirait dans le rapport
+avec la meme assurance que les autres.
+
+Le risque n'est pas theorique. La page affiche cote a cote sept valeurs de
+meme forme : le cours du jour, ses plus haut et plus bas, l'ouverture, et
+les extremes de l'annee precedente. Le plus haut de l'an dernier vaut
+44 944,54 quand le cours vaut 52 665,82 — un glissement d'un champ passerait
+inapercu.
+
+La parade tient a une propriete de la page elle-meme : elle publie a la fois
+le cours, la cloture precedente et la variation. Les trois doivent se
+refermer :
+
+```
+(52 665,82 - 52 618,20) / 52 618,20 = +0,0905 %     la page affiche +0,09 %
+```
+
+L'extracteur refait ce calcul a chaque collecte et leve une erreur si
+l'ecart depasse deux centiemes de point. Une lecture qui glisse casse donc
+l'egalite et se signale, au lieu de passer pour un cours. Le libelle de
+l'indice est verifie avant toute lecture, et treize tests couvrent les
+facons dont la page peut changer de forme.
+
+Cette source reste a surveiller : c'est la seule dont la collecte depende
+d'une mise en page, et l'indice appartient a FTSE Russell, que Borsa
+Italiana diffuse sous licence.
 
 ### Une famille de flux LSE a eviter
 
@@ -290,18 +324,11 @@ dans ce cas.
 - **Projections** : le FMI publie jusqu'en 2031. Ces valeurs sont exclues du
   chiffre de reference et regroupees dans une section a part, pour ne pas
   presenter une prevision comme le dernier chiffre connu.
-- **FTSE MIB** : le niveau de l'indice reste introuvable. EODHD n'expose
-  qu'un indice MIB ESG, Twelve Data le catalogue mais le reserve a ses
-  offres payantes, le flux `IT40/EUR` de LSE appartient a la famille cassee
-  decrite plus haut, et Stooq exige desormais un navigateur avec JavaScript.
-  Milan est donc suivie par l'**indice OCDE des cours boursiers italiens**,
-  mensuel et officiel, qui ne pretend pas etre le FTSE MIB.
-
-  La valeur officielle existe pourtant : Borsa Italiana, qui exploite la
-  place, la publie sur son site — 52 665,82 au 20 aout 2026. La recuperer
-  supposerait d'extraire une page HTML, ce que le reste du projet ne fait
-  nulle part, avec la fragilite et les questions de licence que cela porte.
-  Le choix a ete laisse ouvert plutot que tranche en silence.
+- **FTSE MIB** : servi par Borsa Italiana, la seule lecture HTML du projet
+  (voir plus bas). Aucune API cablee ne le porte : EODHD n'expose qu'un
+  indice MIB ESG, Twelve Data le catalogue mais le reserve a ses offres
+  payantes, le flux `IT40/EUR` de LSE appartient a la famille cassee decrite
+  plus haut, et Stooq exige desormais un navigateur avec JavaScript.
 
   Un ETF repliquant avait ete essaye comme approximation quotidienne, puis
   **retire**. Ses cotations parisiennes se traitent a quelques centaines de

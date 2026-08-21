@@ -24,7 +24,8 @@ log = logging.getLogger(__name__)
 
 # Ordre de confiance: institutions officielles avant agregateurs de marche.
 SOURCE_PRIORITY = [
-    "ecb", "fred", "eurostat", "sec_edgar", "oecd", "eodhd", "worldbank", "imf",
+    "ecb", "fred", "eurostat", "sec_edgar", "borsa_italiana", "oecd", "eodhd",
+    "worldbank", "imf",
     "lse", "frankfurter", "coingecko", "yahoo",
 ]
 
@@ -119,6 +120,7 @@ def build_sources(fetcher: Fetcher, cfg: Settings) -> dict[str, S.Source]:
     """Instancie les adaptateurs utilisables avec la configuration courante."""
     reg: dict[str, S.Source] = {
         "ecb": S.EcbSource(fetcher),
+        "borsa_italiana": S.BorsaItalianaSource(fetcher),
         "eurostat": S.EurostatSource(fetcher),
         "worldbank": S.WorldBankSource(fetcher),
         "imf": S.ImfSource(fetcher),

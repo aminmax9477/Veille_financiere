@@ -704,6 +704,16 @@ CATALOGUE: dict[str, dict[str, Any]] = {
     # leur immobilite commune et non leur fidelite.
     #
     # Reste donc l'indice mensuel de l'OCDE, officiel et sans ambiguite.
+    "equity.ftsemib": {
+        "label": "FTSE MIB (Milan)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "borsa_italiana", "native_id": "FTSEMIB",
+             "expect_title": "FTSE MIB"},
+        ],
+    },
     "equity.it_share_index_m": {
         "label": "Indice des cours boursiers Italie (OCDE, base 100)",
         "unit": "indice",

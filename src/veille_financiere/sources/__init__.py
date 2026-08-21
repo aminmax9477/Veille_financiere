@@ -1,5 +1,6 @@
 """Adaptateurs de sources de donnees."""
 from .base import Source
+from .borsa_italiana import BorsaItalianaSource
 from .coingecko import CoinGeckoSource
 from .ecb import EcbSource
 from .eodhd import EodhdSource
@@ -14,7 +15,7 @@ from .worldbank import WorldBankSource
 from .yahoo import YahooSource
 
 __all__ = [
-    "Source", "CoinGeckoSource", "EcbSource", "EodhdSource",
+    "Source", "BorsaItalianaSource", "CoinGeckoSource", "EcbSource", "EodhdSource",
     "EurostatSource",
     "FrankfurterSource", "FredSource", "ImfSource", "LseSource",
     "OecdSource",

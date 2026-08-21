@@ -83,6 +83,7 @@ class Settings:
             "lse": bool(self.lse_api_key),
             "eodhd": bool(self.eodhd_api_key),
             "ecb": True,
+            "borsa_italiana": True,
             "eurostat": True,
             "worldbank": True,
             "imf": True,
