@@ -566,6 +566,312 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         ],
     },
 
+
+    # ---------------- Places hors Europe de l'Ouest ----------------
+    "equity.kospi": {
+        "label": "Kospi (Seoul)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "KS11", "market": "INDX", "limit": 90},
+        ],
+    },
+    "equity.hangseng": {
+        "label": "Hang Seng (Hong Kong)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "HSI", "market": "INDX", "limit": 90},
+            {"source": "lse", "native_id": "HK33/HKD", "limit": 90},
+        ],
+    },
+    "equity.shanghai": {
+        "label": "Shanghai Composite",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "SSEC", "market": "INDX", "limit": 90},
+        ],
+    },
+    "equity.china_a50": {
+        "label": "China A50",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "lse", "native_id": "CN50/USD", "limit": 90},
+        ],
+    },
+    "equity.taiwan": {
+        "label": "Taiex (Taiwan)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "TWII", "market": "INDX", "limit": 90},
+        ],
+    },
+    "equity.nifty50": {
+        "label": "Nifty 50 (Inde)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "NSEI", "market": "INDX", "limit": 90},
+        ],
+    },
+    "equity.sensex": {
+        "label": "Sensex (Bombay)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "BSESN", "market": "INDX", "limit": 90},
+        ],
+    },
+    "equity.asx200": {
+        "label": "S&P/ASX 200 (Australie)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "AXJO", "market": "INDX", "limit": 90},
+            {"source": "lse", "native_id": "AU200/AUD", "limit": 90},
+        ],
+    },
+    "equity.bovespa": {
+        "label": "Bovespa (Sao Paulo)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "BVSP", "market": "INDX", "limit": 90},
+        ],
+    },
+    "equity.tsx": {
+        "label": "S&P/TSX (Toronto)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "GSPTSE", "market": "INDX", "limit": 90},
+        ],
+    },
+    "equity.mexbol": {
+        "label": "S&P/BMV IPC (Mexique)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "MXX", "market": "INDX", "limit": 90},
+        ],
+    },
+    "equity.smi": {
+        "label": "SMI (Suisse)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "SSMI", "market": "INDX", "limit": 90},
+        ],
+    },
+    "equity.aex": {
+        "label": "AEX (Pays-Bas)",
+        "unit": "points",
+        "frequency": "daily",
+        "category": "actions",
+        "providers": [
+            {"source": "eodhd", "native_id": "AEX", "market": "INDX", "limit": 90},
+        ],
+    },
+
+    # ---------------- Change hors G7 ----------------
+    "fx.usdkrw": {
+        "label": "Dollar US / Won coreen",
+        "unit": "KRW pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "USDKRW", "market": "FOREX", "limit": 90},
+        ],
+    },
+    "fx.usdinr": {
+        "label": "Dollar US / Roupie indienne",
+        "unit": "INR pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "USDINR", "market": "FOREX", "limit": 90},
+        ],
+    },
+    "fx.usdbrl": {
+        "label": "Dollar US / Real bresilien",
+        "unit": "BRL pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "USDBRL", "market": "FOREX", "limit": 90},
+        ],
+    },
+    "fx.usdmxn": {
+        "label": "Dollar US / Peso mexicain",
+        "unit": "MXN pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "USDMXN", "market": "FOREX", "limit": 90},
+        ],
+    },
+    "fx.audusd": {
+        "label": "Dollar australien / Dollar US",
+        "unit": "USD pour 1 AUD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "AUDUSD", "market": "FOREX", "limit": 90},
+        ],
+    },
+    "fx.usdcad": {
+        "label": "Dollar US / Dollar canadien",
+        "unit": "CAD pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "USDCAD", "market": "FOREX", "limit": 90},
+        ],
+    },
+    "fx.usdtwd": {
+        "label": "Dollar US / Dollar taiwanais",
+        "unit": "TWD pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "USDTWD", "market": "FOREX", "limit": 90},
+        ],
+    },
+    "fx.usdsgd": {
+        "label": "Dollar US / Dollar de Singapour",
+        "unit": "SGD pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "USDSGD", "market": "FOREX", "limit": 90},
+        ],
+    },
+    "fx.usdzar": {
+        "label": "Dollar US / Rand sud-africain",
+        "unit": "ZAR pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "USDZAR", "market": "FOREX", "limit": 90},
+        ],
+    },
+    "fx.usdtry": {
+        "label": "Dollar US / Livre turque",
+        "unit": "TRY pour 1 USD",
+        "frequency": "daily",
+        "category": "change",
+        "providers": [
+            {"source": "eodhd", "native_id": "USDTRY", "market": "FOREX", "limit": 90},
+        ],
+    },
+
+    # ---------------- Rendements souverains hors G7 ----------------
+    "rate.kr10y": {
+        "label": "Taux 10 ans Coree du Sud",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "KR10Y", "limit": 90},
+        ],
+    },
+    "rate.in10y": {
+        "label": "Taux 10 ans Inde",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "IN10Y", "limit": 90},
+        ],
+    },
+    "rate.br10y": {
+        "label": "Taux 10 ans Bresil",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "BR10Y", "limit": 90},
+        ],
+    },
+    "rate.au10y": {
+        "label": "Taux 10 ans Australie",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "AU10Y", "limit": 90},
+        ],
+    },
+    "rate.ca10y": {
+        "label": "Taux 10 ans Canada",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "CA10Y", "limit": 90},
+        ],
+    },
+    "rate.mx10y": {
+        "label": "Taux 10 ans Mexique",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "MX10Y", "limit": 90},
+        ],
+    },
+    "rate.za10y": {
+        "label": "Taux 10 ans Afrique du Sud",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "ZA10Y", "limit": 90},
+        ],
+    },
+    "rate.tr10y": {
+        "label": "Taux 10 ans Turquie",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "TR10Y", "limit": 90},
+        ],
+    },
+    "rate.id10y": {
+        "label": "Taux 10 ans Indonesie",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "ID10Y", "limit": 90},
+        ],
+    },
+    "rate.hk10y": {
+        "label": "Taux 10 ans Hong Kong",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [
+            {"source": "eodhd", "native_id": "HK10Y", "limit": 90},
+        ],
+    },
+
     # ---------------- Crypto ----------------
     "crypto.btcusd": {
         "label": "Bitcoin / USD",

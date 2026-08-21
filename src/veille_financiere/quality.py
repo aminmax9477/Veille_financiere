@@ -67,6 +67,13 @@ CATEGORY_TOLERANCE = {
 # bouge trop vite pour le seuil resserre des indices.
 SERIES_TOLERANCE = {
     "equity.vix": 0.02,
+    # LSE cote des contrats indiciels qui continuent de traiter longtemps
+    # apres la cloture de la place locale : leur bougie quotidienne se ferme
+    # a une autre heure que l'indice au comptant, et l'ecart est structurel.
+    # Il reste borne assez bas pour qu'une erreur d'echelle ressorte quand
+    # meme, ce qui est le vrai role de ce recoupement.
+    "equity.hangseng": 0.015,
+    "equity.asx200": 0.015,
 }
 
 CATEGORY_ABS_FLOOR = {

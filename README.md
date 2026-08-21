@@ -114,6 +114,21 @@ Deux verifications ont oriente ce cablage, contre l'intuition de depart :
   rendement autour de 4,7. Le symbole est tentant parce qu'il est a jour,
   mais il ne mesure pas la meme chose.
 
+### Une famille de flux LSE a eviter
+
+Quatre indices europeens de LSE — `IT40/EUR`, `ES35/EUR`, `CH20/CHF` et
+`NL30/EUR` — sont figes au 30 juin 2026 et cotes autour du dixieme de
+l'indice reel : 4 843 pour un FTSE MIB qui vaut 44 000, 1 533 pour un SMI a
+14 368. Ils ne sont pas utilisables et ont ete ecartes.
+
+Le meme fournisseur est en revanche fiable sur `HK33/HKD` et `AU200/AUD`,
+verifies au millieme pres contre EODHD, qui servent donc de recoupement au
+Hang Seng et a l'ASX 200. Leur seuil de divergence y est desserre a 1,5 % :
+ce sont des contrats indiciels qui continuent de traiter des heures apres la
+cloture de la place locale, l'ecart est structurel. Il reste assez serre
+pour qu'une erreur d'echelle ressorte, ce qui est le vrai role de ce
+recoupement — c'est ainsi que le probleme de l'IBEX a ete trouve.
+
 ### A propos de Yahoo Finance
 
 L'API de Yahoo est non documentee et limitee par adresse IP. Depuis certains
@@ -134,6 +149,28 @@ sont desormais servies par LSE. Yahoo est donc **desactive par defaut** — il
 ne faisait plus qu'ajouter une minute et une trentaine de lignes d'erreur
 par run. `VF_ENABLE_YAHOO=1` le remet en service pour qui dispose d'une
 sortie reseau moins sollicitee.
+
+## Couverture geographique
+
+| Zone | Ce qui est suivi |
+|---|---|
+| Etats-Unis | S&P 500, Nasdaq composite et 100, Dow Jones, VIX, courbe souveraine complete, credit, macro detaillee |
+| Europe de l'Ouest | CAC 40, DAX, FTSE 100, Euro Stoxx 50, IBEX 35, SMI, AEX ; dix ans allemand, francais, italien, espagnol, britannique ; inflation zone euro et France |
+| Asie developpee | Nikkei 225, Kospi, Hang Seng, Taiex ; dix ans japonais, coreen, hongkongais |
+| Chine | Shanghai Composite, China A50, dix ans chinois, yuan onshore et offshore |
+| Inde | Nifty 50, Sensex, dix ans indien, roupie |
+| Ameriques hors US | Bovespa, S&P/TSX, IPC mexicain ; dix ans bresilien, canadien, mexicain |
+| Oceanie | S&P/ASX 200, dix ans australien, dollar australien |
+| Emergents | Dix ans sud-africain, turc, indonesien ; rand, livre turque, dollar de Singapour, dollar taiwanais |
+
+Les rendements souverains proviennent tous de la meme bourse virtuelle
+EODHD, donc mesures de la meme facon d'un pays a l'autre — ce qui les rend
+reellement comparables entre eux.
+
+Un ecart *n'a pas* ete calcule entre les dix ans emergents et le dix ans
+americain : soustraire des rendements libelles en monnaies differentes
+melangerait prime de credit et risque de change, et donnerait un chiffre qui
+ne mesure rien. Un spread emergent se lit sur de la dette en dollars.
 
 ## Controles qualite
 
@@ -253,10 +290,9 @@ dans ce cas.
 - **Projections** : le FMI publie jusqu'en 2031. Ces valeurs sont exclues du
   chiffre de reference et regroupees dans une section a part, pour ne pas
   presenter une prevision comme le dernier chiffre connu.
-- **IBEX 35** : servi par EODHD. La serie `ES35/EUR` de LSE a ete retiree —
-  elle cote autour de 1 900 quand l'indice vaut 19 800, soit un facteur dix,
-  et s'arretait a juin 2026. Le controle de reconciliation l'a signalee comme
-  probable probleme d'echelle avant qu'elle ne fausse le rapport.
+- **FTSE MIB** : introuvable. EODHD n'expose qu'un indice MIB ESG, et le
+  flux `IT40/EUR` de LSE appartient a la famille cassee decrite plus haut.
+  C'est la seule grande place europeenne non couverte.
 - **Resultat net trimestriel** : le quatrieme trimestre n'apparait pas
   toujours comme periode de 90 jours dans XBRL, les societes ne publiant
   alors que le cumul annuel dans leur 10-K. La serie peut donc sauter un

@@ -283,3 +283,22 @@ def test_une_serie_comblee_par_calcul_n_est_plus_signalee_en_echec():
     assert len(passifs) == 1
     assert passifs[0].reference is not None
     assert passifs[0].reference.source == "calcule"
+
+
+def test_tolerance_indicielle_asiatique_laisse_passer_l_ecart_horaire():
+    """Le contrat indiciel se ferme des heures apres la place locale : un
+    ecart inferieur au point de pourcentage est structurel, pas une erreur."""
+    d = TODAY
+    by = {"eodhd": [obs("eodhd", d, 25495.07)],
+          "lse": [obs("lse", d, 25714.00)]}
+    assert all(c.passed for c in reconcile("equity.hangseng", by, "actions"))
+
+
+def test_tolerance_indicielle_asiatique_attrape_une_erreur_d_echelle():
+    """Elle reste assez serree pour que le vrai defaut ressorte."""
+    d = TODAY
+    by = {"eodhd": [obs("eodhd", d, 25495.07)],
+          "lse": [obs("lse", d, 2549.51)]}
+    checks = reconcile("equity.hangseng", by, "actions")
+    rates = [c for c in checks if not c.passed]
+    assert rates and "echelle" in rates[0].detail
