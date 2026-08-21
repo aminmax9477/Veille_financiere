@@ -120,6 +120,13 @@ CATALOGUE: dict[str, dict[str, Any]] = {
         "category": "taux",
         "providers": [{"source": "eodhd", "native_id": "JP10Y", "limit": 90}],
     },
+    "rate.jp02y": {
+        "label": "Taux 2 ans Japon",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "eodhd", "native_id": "JP2Y", "limit": 90}],
+    },
     "rate.cn10y": {
         "label": "Taux 10 ans Chine",
         "unit": "%",
@@ -181,6 +188,117 @@ CATALOGUE: dict[str, dict[str, Any]] = {
             {"source": "worldbank", "native_id": "NY.GDP.MKTP.KD.ZG",
              "country": "FRA", "limit": 30},
         ],
+    },
+
+
+    # ---------------- Credit et conditions financieres ----------------
+    "credit.us_hy_oas": {
+        "label": "Spread haut rendement US (OAS)",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "credit",
+        "providers": [{"source": "fred", "native_id": "BAMLH0A0HYM2",
+                       "limit": 90}],
+    },
+    "credit.baa_10y": {
+        "label": "Spread Baa - 10 ans US",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "credit",
+        "providers": [{"source": "fred", "native_id": "BAA10Y", "limit": 90}],
+    },
+    "credit.us_financial_conditions": {
+        "label": "Conditions financieres US (Fed de Chicago)",
+        "unit": "indice",
+        "frequency": "weekly",
+        "category": "credit",
+        "providers": [{"source": "fred", "native_id": "NFCI", "limit": 60}],
+    },
+    "credit.us_financial_stress": {
+        "label": "Stress financier US (Fed de Saint-Louis)",
+        "unit": "indice",
+        "frequency": "weekly",
+        "category": "credit",
+        "providers": [{"source": "fred", "native_id": "STLFSI4", "limit": 60}],
+    },
+
+    # ---------------- Taux reels et anticipations ----------------
+    "rate.us_real_10y": {
+        "label": "Taux reel 10 ans US (TIPS)",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "fred", "native_id": "DFII10", "limit": 90}],
+    },
+    "rate.us_breakeven_10y": {
+        "label": "Point mort d'inflation 10 ans US",
+        "unit": "%",
+        "frequency": "daily",
+        "category": "taux",
+        "providers": [{"source": "fred", "native_id": "T10YIE", "limit": 90}],
+    },
+
+    # ---------------- Macro US elargie ----------------
+    "macro.us_payrolls_change": {
+        "label": "Emplois non agricoles US (variation mensuelle)",
+        "unit": "milliers",
+        "frequency": "monthly",
+        "category": "macro",
+        "providers": [{"source": "fred", "native_id": "PAYEMS", "limit": 36,
+                       "fred_units": "chg"}],
+    },
+    "macro.us_core_pce_yoy": {
+        "label": "Inflation sous-jacente US (PCE, glissement annuel)",
+        "unit": "%",
+        "frequency": "monthly",
+        "category": "macro",
+        "providers": [{"source": "fred", "native_id": "PCEPILFE", "limit": 36,
+                       "fred_units": "pc1"}],
+    },
+    "macro.us_retail_sales_yoy": {
+        "label": "Ventes de detail US (glissement annuel)",
+        "unit": "%",
+        "frequency": "monthly",
+        "category": "macro",
+        "providers": [{"source": "fred", "native_id": "RSAFS", "limit": 36,
+                       "fred_units": "pc1"}],
+    },
+    "macro.us_industrial_production_yoy": {
+        "label": "Production industrielle US (glissement annuel)",
+        "unit": "%",
+        "frequency": "monthly",
+        "category": "macro",
+        "providers": [{"source": "fred", "native_id": "INDPRO", "limit": 36,
+                       "fred_units": "pc1"}],
+    },
+    "macro.us_consumer_sentiment": {
+        "label": "Confiance des menages US (Michigan)",
+        "unit": "indice",
+        "frequency": "monthly",
+        "category": "macro",
+        "providers": [{"source": "fred", "native_id": "UMCSENT", "limit": 36}],
+    },
+    "macro.us_m2_yoy": {
+        "label": "Masse monetaire M2 US (glissement annuel)",
+        "unit": "%",
+        "frequency": "monthly",
+        "category": "macro",
+        "providers": [{"source": "fred", "native_id": "M2SL", "limit": 36,
+                       "fred_units": "pc1"}],
+    },
+    "macro.us_housing_starts": {
+        "label": "Mises en chantier US",
+        "unit": "milliers (rythme annuel)",
+        "frequency": "monthly",
+        "category": "macro",
+        "providers": [{"source": "fred", "native_id": "HOUST", "limit": 36}],
+    },
+    "macro.us_jobless_claims": {
+        "label": "Inscriptions hebdomadaires au chomage US",
+        "unit": "personnes",
+        "frequency": "weekly",
+        "category": "macro",
+        "providers": [{"source": "fred", "native_id": "ICSA", "limit": 60}],
     },
 
     # ---------------- Marches actions ----------------
@@ -480,16 +598,48 @@ COMPANIES: dict[str, dict[str, Any]] = {
     "AAPL": {"cik": 320193, "label": "Apple Inc."},
     "MSFT": {"cik": 789019, "label": "Microsoft Corp."},
     "NVDA": {"cik": 1045810, "label": "NVIDIA Corp."},
+    "GOOGL": {"cik": 1652044, "label": "Alphabet Inc."},
+    "AMZN": {"cik": 1018724, "label": "Amazon.com Inc."},
+    "META": {"cik": 1326801, "label": "Meta Platforms Inc."},
+    "TSLA": {"cik": 1318605, "label": "Tesla Inc."},
+    "JPM": {"cik": 19617, "label": "JPMorgan Chase & Co."},
 }
 
+# Les balises sont donnees par ordre de preference : la taxonomie US-GAAP
+# evolue et les societes ne migrent pas au meme rythme, le premier synonyme
+# qui renvoie des donnees l'emporte.
 XBRL_CONCEPTS = [
-    {"native_id": "Assets", "label": "Actif total", "xbrl_unit": "USD"},
-    {"native_id": "StockholdersEquity", "label": "Capitaux propres",
-     "xbrl_unit": "USD"},
-    # Concept de flux: on cible explicitement le trimestre (~91 jours) pour
-    # ne pas melanger resultats trimestriels et annuels.
-    {"native_id": "NetIncomeLoss", "label": "Resultat net trimestriel",
-     "xbrl_unit": "USD", "duration_days": 91},
+    {"key": "assets", "label": "Actif total", "xbrl_unit": "USD",
+     "native_id": ["Assets"]},
+    {"key": "liabilities", "label": "Passif total", "xbrl_unit": "USD",
+     "native_id": ["Liabilities"]},
+    {"key": "equity", "label": "Capitaux propres", "xbrl_unit": "USD",
+     "native_id": ["StockholdersEquity"]},
+    # Les banques ne tiennent pas leur tresorerie sous la meme balise que
+    # les societes industrielles.
+    {"key": "cash", "label": "Tresorerie", "xbrl_unit": "USD",
+     "native_id": ["CashAndCashEquivalentsAtCarryingValue",
+                   "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
+                   "CashAndDueFromBanks"]},
+    # Concepts de flux : cibles sur le trimestre, cumuls ecartes.
+    {"key": "revenue", "label": "Chiffre d'affaires trimestriel",
+     "xbrl_unit": "USD", "duration_days": 91,
+     # Une banque ne declare pas de chiffre d'affaires mais un produit net
+     # bancaire, sous RevenuesNetOfInterestExpense.
+     "native_id": ["RevenueFromContractWithCustomerExcludingAssessedTax",
+                   "Revenues",
+                   "RevenueFromContractWithCustomerIncludingAssessedTax",
+                   "RevenuesNetOfInterestExpense"]},
+    # OperatingIncomeLoss n'existe pas chez les banques : leur equivalent est
+    # le resultat avant impot des activites poursuivies.
+    {"key": "operating_income", "label": "Resultat operationnel trimestriel",
+     "xbrl_unit": "USD", "duration_days": 91,
+     "native_id": ["OperatingIncomeLoss",
+                   "IncomeLossFromContinuingOperationsBeforeIncomeTaxes"
+                   "ExtraordinaryItemsNoncontrollingInterest"]},
+    {"key": "netincome", "label": "Resultat net trimestriel",
+     "xbrl_unit": "USD", "duration_days": 91,
+     "native_id": ["NetIncomeLoss"]},
 ]
 
 
@@ -514,16 +664,20 @@ def iter_company_specs() -> list[dict[str, Any]]:
     specs: list[dict[str, Any]] = []
     for ticker, comp in COMPANIES.items():
         for concept in XBRL_CONCEPTS:
+            duree = concept.get("duration_days")
             specs.append({
-                "series_id": f"fundamental.{ticker.lower()}.{concept['native_id'].lower()}",
+                "series_id": f"fundamental.{ticker.lower()}.{concept['key']}",
                 "source": "sec_edgar",
                 "native_id": concept["native_id"],
                 "cik": comp["cik"],
                 "xbrl_unit": concept["xbrl_unit"],
-                "duration_days": concept.get("duration_days"),
+                "duration_days": duree,
                 "label": f"{comp['label']} - {concept['label']}",
                 "unit": "USD",
-                "frequency": "quarterly",
+                # Les concepts de stock sont dates a un instant, pas sur une
+                # periode : les declarer trimestriels ferait mentir la
+                # frequence annoncee aux controles de fraicheur.
+                "frequency": "quarterly" if duree else "instant",
                 "category": "fondamentaux",
                 "limit": 16,
             })

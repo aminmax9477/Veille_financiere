@@ -30,8 +30,10 @@ INFO, WARN, ERROR = "info", "warning", "error"
 # Age maximal tolere de la derniere observation, par frequence.
 MAX_AGE_DAYS = {
     "daily": 7,        # marge pour week-ends et jours feries
+    "weekly": 21,
     "monthly": 75,     # les publications macro sortent avec ~1 mois de retard
     "quarterly": 150,
+    "instant": 150,
     "annual": 550,
 }
 
@@ -53,6 +55,7 @@ CATEGORY_TOLERANCE = {
     "crypto": 0.01,
     "macro": 0.10,
     "fondamentaux": 0.01,
+    "credit": 0.02,
 }
 
 # Ecart absolu en dessous duquel on ne signale rien, meme si l'ecart relatif
@@ -121,7 +124,8 @@ def check_freshness(series_id: str, obs: Sequence[Observation], frequency: str,
 # places ferment plusieurs jours d'affilee pour les fetes nationales — la
 # semaine d'or chinoise en octobre, le nouvel an lunaire — et ces coupures
 # sont normales, pas des donnees manquantes.
-CONTINUITY_FLOOR_DAYS = {"daily": 12, "monthly": 70, "quarterly": 200}
+CONTINUITY_FLOOR_DAYS = {"daily": 12, "weekly": 24, "monthly": 70,
+                         "quarterly": 200}
 
 
 def check_continuity(series_id: str, obs: Sequence[Observation],

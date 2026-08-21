@@ -461,3 +461,205 @@ def test_eodhd_se_rabat_sur_adjusted_close():
                                     "adjusted_close": 5.07}]), api_key="k")
     obs = src._fetch_series({"series_id": "rate.gb10y", "native_id": "UK10Y"})
     assert obs[0].value == pytest.approx(5.07)
+
+
+def test_sec_reconstitue_le_quatrieme_trimestre():
+    """Aucun 10-Q n'est depose pour le T4 : il n'existe que fondu dans le
+    cumul annuel du 10-K, ce qui faisait sauter un point a la serie."""
+    from veille_financiere.sources.sec_edgar import SecEdgarSource
+    payload = {"units": {"USD": [
+        {"start": "2025-07-28", "end": "2025-10-26", "val": 31_910_000_000,
+         "form": "10-Q", "filed": "2025-11-20"},
+        {"start": "2025-01-27", "end": "2025-10-26", "val": 77_110_000_000,
+         "form": "10-Q", "filed": "2025-11-20"},          # cumul 9 mois
+        {"start": "2025-01-27", "end": "2026-01-25", "val": 120_070_000_000,
+         "form": "10-K", "filed": "2026-02-26"},          # exercice complet
+        {"start": "2026-01-26", "end": "2026-04-26", "val": 58_320_000_000,
+         "form": "10-Q", "filed": "2026-05-28"},
+    ]}}
+    src = SecEdgarSource(FakeFetcher(payload))
+    obs = src._fetch_series({"series_id": "f.nvda", "native_id": "NetIncomeLoss",
+                             "cik": 1045810, "duration_days": 91})
+    par_date = {o.date: o for o in obs}
+    t4 = par_date[dt.date(2026, 1, 25)]
+    assert t4.value == pytest.approx(42_960_000_000)
+    assert t4.meta.get("derive") is True
+    # Les trimestres deposes restent inchanges et non marques.
+    assert par_date[dt.date(2026, 4, 26)].meta.get("derive") is None
+
+
+def test_sec_ne_reconstitue_rien_sans_cumul_correspondant():
+    """Sans cumul de reference, le T4 n'est pas deduit — et le concept, vide
+    de tout trimestre, remonte en echec au lieu de disparaitre en silence."""
+    from veille_financiere.sources.sec_edgar import SecEdgarSource
+    payload = {"units": {"USD": [
+        {"start": "2025-01-27", "end": "2026-01-25", "val": 120_070_000_000,
+         "form": "10-K", "filed": "2026-02-26"},
+    ]}}
+    src = SecEdgarSource(FakeFetcher(payload))
+    with pytest.raises(SourceError):
+        src._fetch_series({"series_id": "f.x", "native_id": "NetIncomeLoss",
+                           "cik": 1, "duration_days": 91})
+
+
+def test_sec_ne_reconstitue_pas_les_concepts_instantanes():
+    """Assets n'a pas de duree : rien a deduire, et surtout rien a fausser."""
+    from veille_financiere.sources.sec_edgar import SecEdgarSource
+    payload = {"units": {"USD": [
+        {"end": "2026-04-26", "val": 259_470_000_000, "form": "10-Q",
+         "filed": "2026-05-28"},
+    ]}}
+    src = SecEdgarSource(FakeFetcher(payload))
+    obs = src._fetch_series({"series_id": "f.x", "native_id": "Assets", "cik": 1})
+    assert len(obs) == 1 and obs[0].meta.get("derive") is None
+
+
+class AliasFetcher:
+    """Renvoie une charge utile differente selon le concept demande."""
+
+    def __init__(self, par_concept):
+        self.par_concept = par_concept
+        self.calls = []
+
+    def fetch(self, url, params=None, headers=None, **kwargs):
+        self.calls.append((url, params))
+        for concept, payload in self.par_concept.items():
+            if f"/{concept}.json" in url:
+                return payload
+        raise RuntimeError("HTTP 404")
+
+
+def test_sec_essaie_les_synonymes_de_concept():
+    """Le chiffre d'affaires se lit sous deux balises selon les societes."""
+    from veille_financiere.sources.sec_edgar import SecEdgarSource
+    fetcher = AliasFetcher({
+        # Concept moderne present mais vide chez cette societe.
+        "RevenueFromContractWithCustomerExcludingAssessedTax":
+            {"units": {"USD": []}},
+        "Revenues": {"units": {"USD": [
+            {"start": "2026-01-26", "end": "2026-04-26", "val": 44_060_000_000,
+             "form": "10-Q", "filed": "2026-05-28"},
+        ]}},
+    })
+    src = SecEdgarSource(fetcher)
+    obs = src._fetch_series({
+        "series_id": "f.nvda.revenue", "cik": 1045810, "duration_days": 91,
+        "native_id": ["RevenueFromContractWithCustomerExcludingAssessedTax",
+                      "Revenues"],
+    })
+    assert len(obs) == 1 and obs[0].value == pytest.approx(44_060_000_000)
+    assert len(fetcher.calls) == 2   # le premier synonyme a bien ete tente
+
+
+def test_sec_signale_l_echec_de_tous_les_synonymes():
+    from veille_financiere.sources.sec_edgar import SecEdgarSource
+    src = SecEdgarSource(AliasFetcher({}))
+    with pytest.raises(SourceError):
+        src._fetch_series({"series_id": "f.x", "cik": 1,
+                           "native_id": ["Inexistant", "PasPlus"]})
+
+
+def test_sec_retient_le_synonyme_le_plus_a_jour():
+    """Une balise abandonnee continue de servir son historique : chez
+    JPMorgan le concept moderne s'arrete en 2014 quand l'ancien est tenu a
+    jour. Prendre le premier qui repond figerait la serie douze ans en
+    arriere sans que rien ne le signale."""
+    from veille_financiere.sources.sec_edgar import SecEdgarSource
+    fetcher = AliasFetcher({
+        "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [
+            {"start": "2014-10-01", "end": "2014-12-31", "val": 23_419_000_000,
+             "form": "10-K", "filed": "2015-02-24"},
+        ]}},
+        "Revenues": {"units": {"USD": [
+            {"start": "2026-04-01", "end": "2026-06-30", "val": 45_680_000_000,
+             "form": "10-Q", "filed": "2026-08-05"},
+        ]}},
+    })
+    src = SecEdgarSource(fetcher)
+    obs = src._fetch_series({
+        "series_id": "f.jpm.revenue", "cik": 19617, "duration_days": 91,
+        "native_id": ["RevenueFromContractWithCustomerExcludingAssessedTax",
+                      "Revenues"],
+    })
+    assert obs[0].date == dt.date(2026, 6, 30)
+    assert obs[0].value == pytest.approx(45_680_000_000)
+
+
+def test_sec_raccorde_deux_balises_concordantes():
+    """Alphabet alterne entre deux balises : les recoller donne un historique
+    continu, une fois verifie qu'elles disent la meme chose."""
+    from veille_financiere.sources.sec_edgar import SecEdgarSource
+    fetcher = AliasFetcher({
+        "Revenues": {"units": {"USD": [
+            {"start": "2026-04-01", "end": "2026-06-30", "val": 100,
+             "form": "10-Q", "filed": "2026-08-01"},
+            {"start": "2024-04-01", "end": "2024-06-30", "val": 80,
+             "form": "10-Q", "filed": "2024-08-01"},
+        ]}},
+        "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [
+            {"start": "2024-04-01", "end": "2024-06-30", "val": 80,
+             "form": "10-Q", "filed": "2024-08-01"},      # date commune, valeur identique
+            {"start": "2025-04-01", "end": "2025-06-30", "val": 90,
+             "form": "10-Q", "filed": "2025-08-01"},      # trimestre absent de l'autre
+        ]}},
+    })
+    src = SecEdgarSource(fetcher)
+    obs = src._fetch_series({"series_id": "f.googl.revenue", "cik": 1652044,
+                             "duration_days": 91,
+                             "native_id": ["Revenues",
+                                           "RevenueFromContractWithCustomer"
+                                           "ExcludingAssessedTax"]})
+    dates = sorted(o.date for o in obs)
+    assert dt.date(2025, 6, 30) in dates      # le trou est comble
+    assert len(dates) == 3
+
+
+def test_sec_refuse_de_raccorder_deux_grandeurs_differentes():
+    """Si les deux balises divergent la ou elles se recoupent, les recoller
+    fabriquerait une rupture invisible au point de raccord."""
+    from veille_financiere.sources.sec_edgar import SecEdgarSource
+    fetcher = AliasFetcher({
+        "Revenues": {"units": {"USD": [
+            {"start": "2026-04-01", "end": "2026-06-30", "val": 100,
+             "form": "10-Q", "filed": "2026-08-01"},
+            {"start": "2024-04-01", "end": "2024-06-30", "val": 80,
+             "form": "10-Q", "filed": "2024-08-01"},
+        ]}},
+        "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [
+            {"start": "2024-04-01", "end": "2024-06-30", "val": 65,
+             "form": "10-Q", "filed": "2024-08-01"},      # desaccord de 19 %
+            {"start": "2025-04-01", "end": "2025-06-30", "val": 70,
+             "form": "10-Q", "filed": "2025-08-01"},
+        ]}},
+    })
+    src = SecEdgarSource(fetcher)
+    obs = src._fetch_series({"series_id": "f.x.revenue", "cik": 1,
+                             "duration_days": 91,
+                             "native_id": ["Revenues",
+                                           "RevenueFromContractWithCustomer"
+                                           "ExcludingAssessedTax"]})
+    dates = sorted(o.date for o in obs)
+    assert dt.date(2025, 6, 30) not in dates
+    assert len(dates) == 2
+
+
+def test_sec_ne_raccorde_pas_sans_date_commune():
+    """Sans recoupement, rien ne permet d'affirmer que c'est la meme
+    grandeur : on s'abstient plutot que de parier."""
+    from veille_financiere.sources.sec_edgar import SecEdgarSource
+    fetcher = AliasFetcher({
+        "Revenues": {"units": {"USD": [
+            {"start": "2026-04-01", "end": "2026-06-30", "val": 100,
+             "form": "10-Q", "filed": "2026-08-01"},
+        ]}},
+        "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [
+            {"start": "2020-04-01", "end": "2020-06-30", "val": 50,
+             "form": "10-Q", "filed": "2020-08-01"},
+        ]}},
+    })
+    src = SecEdgarSource(fetcher)
+    obs = src._fetch_series({"series_id": "f.x", "cik": 1, "duration_days": 91,
+                             "native_id": ["Revenues",
+                                           "RevenueFromContractWithCustomer"
+                                           "ExcludingAssessedTax"]})
+    assert len(obs) == 1 and obs[0].date == dt.date(2026, 6, 30)

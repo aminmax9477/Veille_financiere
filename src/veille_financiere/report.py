@@ -6,6 +6,47 @@ from .pipeline import RunResult, SeriesReport
 
 STATUS_MARK = {"ok": "OK", "warning": "!!", "error": "XX"}
 
+# Un ecart statistique n'est pas un defaut de collecte : c'est le mouvement
+# lui-meme qui est remarquable. Le confondre avec une donnee obsolete ou deux
+# sources en desaccord noie l'information dans le bruit technique.
+CHECKS_INFORMATIFS = {"outlier"}
+
+
+def _partager_constats(run):
+    """Separe ce qui met la donnee en doute de ce qui merite d'etre lu."""
+    doutes, mouvements = [], []
+    for rapport in run.reports:
+        for controle in rapport.checks:
+            if controle.passed:
+                continue
+            cible = (mouvements if controle.name in CHECKS_INFORMATIFS
+                     else doutes)
+            cible.append((rapport, controle))
+    return doutes, mouvements
+
+
+def _decrire_mouvement(rapport, controle) -> str:
+    """Reformule un ecart statistique en langage lisible."""
+    obs = sorted(rapport.by_source.get(
+        rapport.reference.source if rapport.reference else "", []),
+        key=lambda o: o.date)
+    if len(obs) < 2:
+        return controle.detail
+    avant, apres = obs[-2].value, obs[-1].value
+    if avant == 0:
+        return controle.detail
+    variation = (apres - avant) / abs(avant) * 100
+    return (f"{_fmt_nombre(avant)} -> {_fmt_nombre(apres)} "
+            f"({variation:+.1f} %) au {obs[-1].date}")
+
+
+def _fmt_nombre(v: float) -> str:
+    if abs(v) >= 1e9:
+        return f"{v/1e9:,.2f} Md"
+    if abs(v) >= 1e6:
+        return f"{v/1e6:,.2f} M"
+    return f"{v:,.2f}"
+
 CATEGORY_LABEL = {
     "change": "Taux de change",
     "taux": "Taux d'interet",
@@ -14,6 +55,7 @@ CATEGORY_LABEL = {
     "matieres": "Matieres premieres",
     "crypto": "Crypto-actifs",
     "fondamentaux": "Fondamentaux societes",
+    "credit": "Credit et conditions financieres",
 }
 
 
@@ -97,15 +139,25 @@ def render_console(run: RunResult) -> str:
                          f"a l'horizon {o.date.year} ({o.source})")
         lines.append("")
 
-    problems = [c for r in run.reports for c in r.checks if not c.passed]
-    if problems:
+    doutes, mouvements = _partager_constats(run)
+
+    if mouvements:
+        lines.append("-- MOUVEMENTS NOTABLES " + "-" * 61)
+        for rapport, controle in sorted(mouvements,
+                                        key=lambda x: x[0].series_id):
+            lines.append(f"   {rapport.label[:40]:42} "
+                         f"{_decrire_mouvement(rapport, controle)}")
+        lines.append("")
+
+    if doutes:
         lines.append("-- POINTS D'ATTENTION " + "-" * 62)
-        for c in sorted(problems, key=lambda c: (c.severity != "error", c.series_id)):
+        for _, c in sorted(doutes, key=lambda x: (x[1].severity != "error",
+                                                  x[1].series_id)):
             mark = "XX" if c.severity == "error" else "!!"
             lines.append(f"   {mark} [{c.series_id}] {c.name}: {c.detail}")
         lines.append("")
     else:
-        lines.append("   Aucun point d'attention.\n")
+        lines.append("   Aucune donnee mise en doute.\n")
 
     failed = [r for r in run.results if not r.ok]
     if failed:
@@ -196,14 +248,29 @@ def render_markdown(run: RunResult) -> str:
                        f"{o.date.year} | {o.source} |")
         out.append("")
 
-    problems = [c for r in run.reports for c in r.checks if not c.passed]
+    doutes, mouvements = _partager_constats(run)
+
+    if mouvements:
+        out += ["## Mouvements notables", "",
+                "*Variations qui sortent nettement de l'ordinaire de leur "
+                "serie. La donnee est verifiee ; c'est le mouvement qui est "
+                "remarquable.*", "",
+                "| Serie | Evolution |", "|---|---|"]
+        for rapport, controle in sorted(mouvements,
+                                        key=lambda x: x[0].series_id):
+            out.append(f"| {rapport.label} | "
+                       f"{_decrire_mouvement(rapport, controle)} |")
+        out.append("")
+
     out += ["## Points d'attention", ""]
-    if problems:
+    if doutes:
         out += ["| Gravite | Serie | Controle | Detail |", "|---|---|---|---|"]
-        for c in sorted(problems, key=lambda c: (c.severity != "error", c.series_id)):
+        for _, c in sorted(doutes,
+                           key=lambda x: (x[1].severity != "error",
+                                          x[1].series_id)):
             out.append(f"| {c.severity} | `{c.series_id}` | {c.name} | {c.detail} |")
     else:
-        out.append("Aucun point d'attention.")
+        out.append("Aucune donnee mise en doute.")
     out.append("")
 
     failed = [r for r in run.results if not r.ok]

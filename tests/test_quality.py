@@ -219,3 +219,67 @@ def test_continuite_signale_encore_un_vrai_trou_quotidien():
     dates = [dt.date(2026, 1, d) for d in (5, 6, 7)] + [dt.date(2026, 3, 2)]
     c = check_continuity("x", [obs("eodhd", d, 1.0) for d in dates], "daily")
     assert not c.passed
+
+
+def test_un_spread_varie_en_points_et_non_en_relatif():
+    """Un spread passe de 0,84 a 0,85 : c'est +0,01 point, pas +1,4 %."""
+    from veille_financiere.pipeline import SeriesReport
+    o1 = obs("calcule", dt.date(2026, 8, 19), 0.8386, series="spread.oat_bund")
+    o2 = obs("calcule", TODAY, 0.8505, series="spread.oat_bund")
+    rep = SeriesReport(series_id="spread.oat_bund", label="OAT-Bund",
+                       unit="points de %", category="taux", frequency="daily",
+                       reference=o2, by_source={"calcule": [o1, o2]})
+    assert rep.is_percentage
+    assert rep.change() == pytest.approx(0.0119, abs=1e-4)
+
+
+def test_residu_de_fisher_reste_proche_de_zero():
+    """Taux reel + point mort - nominal : trois mesures independantes qui
+    doivent se refermer sur elles-memes."""
+    from veille_financiere.derived import compute
+    d = TODAY
+    ref = {
+        "rate.us_real_10y": {d: 2.35},
+        "rate.us_breakeven_10y": {d: 2.34},
+        "rate.us10y": {d: 4.706},
+    }
+    residu = compute(ref)["control.fisher_us_10y"][0]
+    assert abs(residu.value) < 0.05
+
+
+def test_serie_derivee_ignoree_si_une_composante_manque():
+    from veille_financiere.derived import compute
+    assert "spread.oat_bund" not in compute({"rate.fr10y": {TODAY: 4.12}})
+
+
+def test_serie_derivee_calculee_sur_les_seules_dates_communes():
+    from veille_financiere.derived import compute
+    ref = {
+        "rate.fr10y": {TODAY: 4.1258, dt.date(2026, 8, 19): 4.11},
+        "rate.de10y": {TODAY: 3.2753},
+    }
+    obs = compute(ref)["spread.oat_bund"]
+    assert len(obs) == 1 and obs[0].date == TODAY
+    assert obs[0].value == pytest.approx(0.8505)
+
+
+def test_une_serie_comblee_par_calcul_n_est_plus_signalee_en_echec():
+    """Amazon ne depose pas la balise Liabilities : le passif est deduit de
+    l'actif moins les capitaux propres. La ligne ne doit alors plus figurer
+    parmi les echecs, sinon le rapport l'affiche deux fois."""
+    from veille_financiere.pipeline import run
+    from veille_financiere.config import Settings
+    cfg = Settings()
+    cfg.fred_api_key = ""
+    cfg.lse_api_key = ""
+    cfg.eodhd_api_key = ""
+    resultat = run(cfg, include_fundamentals=True, with_calendar=False,
+                   only_series={"fundamental.amzn.assets",
+                                "fundamental.amzn.equity",
+                                "fundamental.amzn.liabilities"},
+                   persist=False)
+    passifs = [r for r in resultat.reports
+               if r.series_id == "fundamental.amzn.liabilities"]
+    assert len(passifs) == 1
+    assert passifs[0].reference is not None
+    assert passifs[0].reference.source == "calcule"

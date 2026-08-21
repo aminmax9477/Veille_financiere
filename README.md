@@ -142,9 +142,15 @@ Chaque serie passe quatre controles, journalises en base :
 | Controle | Ce qu'il verifie |
 |---|---|
 | `freshness` | La derniere valeur est-elle assez recente pour la frequence annoncee ? Les projections datees dans le futur (FMI) sont traitees a part. |
-| `continuity` | Manque-t-il des points dans l'historique ? Les dates sont dedoublonnees pour ne pas confondre couverture multi-sources et trou. |
+| `continuity` | Manque-t-il des points dans l'historique ? Les dates sont dedoublonnees pour ne pas confondre couverture multi-sources et trou, et les fermetures de place prolongees (semaine d'or chinoise) sont tolerees. |
 | `outlier` | La derniere variation depasse-t-elle 6 ecarts-types de la distribution passee ? |
 | `reconcile` | Les sources couvrant la meme serie sont-elles d'accord ? |
+
+Le rapport separe deux choses que l'on confond souvent. Un ecart statistique
+sur un fondamental n'est pas un defaut de collecte : la donnee est bonne,
+c'est le mouvement qui est remarquable. Ces cas partent dans **Mouvements
+notables**, reformules en langage lisible ; **Points d'attention** ne garde
+que ce qui met reellement la donnee en doute.
 
 ### Comment fonctionne la reconciliation
 
@@ -181,6 +187,24 @@ signalee comme probable probleme d'unite plutot que comme desaccord de fond.
 Quand plusieurs sources couvrent une serie, la valeur retenue est celle de la
 source la plus fraiche ; a fraicheur egale, les institutions officielles
 (BCE, FRED, Eurostat, SEC) passent avant les agregateurs de marche.
+
+## Series calculees
+
+Un ecart de taux ou une pente de courbe n'est publie nulle part tel quel :
+c'est une soustraction. La calculer ici plutot que de l'acheter a un tiers
+garantit qu'elle est coherente avec le reste du rapport — le spread affiche
+est exactement la difference des deux rendements affiches au-dessus, ce que
+ne garantit pas un fournisseur qui l'aurait calcule a une autre heure.
+
+Sont calcules les spreads OAT-Bund, BTP-Bund, Bonos-Bund et Gilt-Bund,
+l'ecart transatlantique a dix ans, et les pentes de courbe americaine et
+japonaise. Chaque calcul ne porte que sur les dates ou toutes ses
+composantes existent.
+
+S'y ajoute un controle de coherence : le **residu de Fisher**, soit taux
+reel plus point mort d'inflation moins taux nominal, attendu proche de zero.
+Les trois series viennent de la meme source mais de trois mesures
+independantes ; un residu qui se creuse signale qu'une des trois a decroche.
 
 ## Donnees
 
@@ -237,15 +261,44 @@ dans ce cas.
   toujours comme periode de 90 jours dans XBRL, les societes ne publiant
   alors que le cumul annuel dans leur 10-K. La serie peut donc sauter un
   trimestre. Le deduire (annuel moins cumul 9 mois) reste a faire.
-## Un point de vigilance sur les fondamentaux SEC
+## Quatre pieges des fondamentaux SEC
 
-Dans XBRL, une meme balise de flux (`NetIncomeLoss`) apparait aussi bien dans
-un 10-Q (3 mois) que dans un 10-K (12 mois), et les rapports trimestriels
-contiennent en plus des cumuls 6 et 9 mois. Les additionner dans une seule
-serie donnerait des variations sans aucun sens. Les concepts de flux sont
-donc filtres sur leur duree reelle (`duration_days`), tandis que les concepts
-de stock (`Assets`, `StockholdersEquity`), dates a un instant, sont conserves
-tels quels.
+La taxonomie XBRL est plus retorse qu'il n'y parait, et chacun de ces points
+a ete constate sur les donnees reelles avant d'etre traite.
+
+**Les durees se melangent.** Une meme balise de flux (`NetIncomeLoss`)
+apparait dans un 10-Q sur 3 mois comme dans un 10-K sur 12, et les rapports
+trimestriels ajoutent des cumuls 6 et 9 mois. Les concepts de flux sont donc
+filtres sur leur duree reelle ; les concepts de stock, dates a un instant,
+sont conserves tels quels.
+
+**Le quatrieme trimestre n'existe pas.** Aucune societe ne depose de 10-Q
+pour son dernier trimestre : il n'apparait que fondu dans le cumul annuel du
+10-K. La serie sautait donc un point par exercice. Il est desormais
+reconstitue par difference — exercice complet moins cumul des trois premiers
+trimestres. Chez NVIDIA, cela remplace un saut apparent de 31,9 a 58,3
+milliards par la progression reelle, qui passe par 43,0.
+
+**Une balise abandonnee continue de servir son historique.** Le chiffre
+d'affaires se lit sous `RevenueFromContractWithCustomerExcludingAssessedTax`
+chez Apple, Microsoft, Amazon et Tesla, mais sous `Revenues` chez NVIDIA,
+Alphabet et JPMorgan, et sous `RevenuesNetOfInterestExpense` pour le produit
+net bancaire. Chaque concept accepte donc une liste de synonymes, et c'est le
+plus a jour qui l'emporte — pas le premier qui repond : chez JPMorgan, le
+concept moderne s'arrete en 2014 et l'aurait fige douze ans en arriere.
+
+**Les societes alternent entre balises au fil des annees.** Chez Alphabet,
+`Revenues` couvre les trimestres recents mais saute trois ans que l'autre
+balise renseigne. Les deux series sont raccordees pour donner un historique
+continu — 48 trimestres au lieu de 25 — mais seulement apres verification
+qu'elles concordent sur leurs dates communes. Sans recoupement, ou en cas de
+desaccord, on s'abstient plutot que de fabriquer une rupture invisible au
+point de raccord.
+
+Enfin, une balise absente n'est pas toujours une donnee perdue : Amazon ne
+publie pas `Liabilities`, mais le passif se retrouve exactement par
+difference entre l'actif et les capitaux propres. Ce filet ne s'applique
+jamais la ou la donnee a ete reellement collectee.
 
 ## Tests
 

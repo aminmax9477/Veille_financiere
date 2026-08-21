@@ -8,6 +8,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
+from . import derived
 from . import sources as S
 from .config import Settings, settings as default_settings
 from .http import Fetcher, HttpCache
@@ -73,7 +74,13 @@ class SeriesReport:
 
     @property
     def is_percentage(self) -> bool:
-        return self.unit.strip() == "%"
+        """Serie deja exprimee en pourcentage, ecart ou niveau.
+
+        Un spread vaut 0,85 « point de pourcentage » : dire qu'il a varie de
+        1,38 % laisserait croire a un mouvement relatif alors qu'il s'agit
+        de 0,012 point.
+        """
+        return self.unit.strip() in ("%", "points de %")
 
 
 @dataclass(slots=True)
@@ -228,8 +235,46 @@ def run(cfg: Settings | None = None, include_fundamentals: bool = True,
             outlook=outlook,
         ))
 
-    # Les series entierement en echec meritent d'apparaitre dans le rapport.
-    failed_ids = {r.series_id for r in results if not r.ok} - set(grouped)
+    # Series calculees: elles s'appuient sur la valeur de reference de chaque
+    # composante, donc sur une seule source par serie, pour que le spread
+    # affiche soit exactement la difference des rendements affiches.
+    reference_par_serie: dict[str, dict[dt.date, float]] = {}
+    for rapport in reports:
+        if not rapport.reference:
+            continue
+        obs = rapport.by_source.get(rapport.reference.source, [])
+        reference_par_serie[rapport.series_id] = {o.date: o.value for o in obs}
+
+    deja_collectees = {r.series_id for r in reports if r.reference}
+    for series_id, observations in derived.compute(reference_par_serie).items():
+        # Une serie calculee ne sert que de filet : si la donnee a ete
+        # collectee pour de vrai, elle fait foi.
+        if series_id in deja_collectees:
+            continue
+        spec_derivee = derived.spec_par_id()[series_id]
+        checks = [
+            check_freshness(series_id, observations, spec_derivee.frequency),
+            check_continuity(series_id, observations, spec_derivee.frequency),
+            check_outlier(series_id, observations),
+        ]
+        reports.append(SeriesReport(
+            series_id=series_id,
+            label=spec_derivee.label,
+            unit=spec_derivee.unit,
+            category=spec_derivee.category,
+            frequency=spec_derivee.frequency,
+            reference=max(observations, key=lambda o: o.date),
+            by_source={"calcule": observations},
+            checks=checks,
+        ))
+
+    # Les series entierement en echec meritent d'apparaitre dans le rapport,
+    # sauf celles qu'un calcul a comblees entre-temps : les signaler encore
+    # afficherait deux fois la meme ligne, une fois renseignee et une fois
+    # en erreur.
+    comblees = {r.series_id for r in reports if r.reference}
+    failed_ids = ({r.series_id for r in results if not r.ok}
+                  - set(grouped) - comblees)
     for series_id in sorted(failed_ids):
         entry = CATALOGUE.get(series_id, {})
         spec = spec_by_series.get(series_id, {})
@@ -254,6 +299,9 @@ def run(cfg: Settings | None = None, include_fundamentals: bool = True,
             for res in results:
                 if res.ok:
                     store.upsert_observations(res.observations)
+            for rapport in reports:
+                if rapport.reference and rapport.reference.source == "calcule":
+                    store.upsert_observations(rapport.by_source["calcule"])
             store.upsert_events(events)
             store.log_run(run_id, started.isoformat(), results)
             store.log_checks(run_id, started.isoformat(), result.checks)
